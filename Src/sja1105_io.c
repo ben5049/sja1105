@@ -65,13 +65,11 @@ sja1105_status_t __SJA1105_ReadRegister(sja1105_handle_t *dev, uint32_t addr, ui
                 goto end;
             }
         } else {
-            __disable_irq(); // TODO: This absolutely needs to be removed
             if (HAL_SPI_Receive(dev->config->spi_handle, (uint8_t *) &data[size - dwords_remaining], block_size, dev->config->timeout) != HAL_OK) {
                 status = SJA1105_SPI_ERROR;
                 dev->events.spi_errors++;
                 goto end;
             }
-            __enable_irq(); // TODO: This absolutely needs to be removed
         }
         dev->events.words_read += block_size;
 
