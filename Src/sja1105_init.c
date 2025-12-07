@@ -67,6 +67,7 @@ sja1105_status_t SJA1105_Init(
     sja1105_handle_t          *dev,
     const sja1105_config_t    *config,
     const sja1105_callbacks_t *callbacks,
+    void                      *callback_context,
     uint32_t                   fixed_length_table_buffer[SJA1105_FIXED_BUFFER_SIZE],
     const uint32_t            *static_conf,
     uint32_t                   static_conf_size) {
@@ -78,10 +79,10 @@ sja1105_status_t SJA1105_Init(
     if (status != SJA1105_OK) goto end;
 
     /* Take the mutex */
-    status = callbacks->callback_take_mutex(dev, config->timeout);
+    status = callbacks->callback_take_mutex(config->timeout, callback_context);
     if (status != SJA1105_OK) return status;
 
-    /* Only the SJA1105Q has been implemented. TODO: Add more */
+    /* Only the SJA1105Q has been implemented, others may work but are unsupported. TODO: Add more */
     if (config->variant != VARIANT_SJA1105Q) status = SJA1105_NOT_IMPLEMENTED_ERROR;
     if (status != SJA1105_OK) return status;
 
@@ -92,6 +93,11 @@ sja1105_status_t SJA1105_Init(
     }
 
     /* Check callbacks */
+    if (callbacks->callback_write_rst_pin == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (callbacks->callback_write_cs_pin == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (callbacks->callback_spi_transmit == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (callbacks->callback_spi_receive == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (callbacks->callback_spi_transmit_receive == NULL) status = SJA1105_PARAMETER_ERROR;
     if (callbacks->callback_get_time_ms == NULL) status = SJA1105_PARAMETER_ERROR;
     if (callbacks->callback_delay_ms == NULL) status = SJA1105_PARAMETER_ERROR;
     if (callbacks->callback_delay_ns == NULL) status = SJA1105_PARAMETER_ERROR;
@@ -103,19 +109,13 @@ sja1105_status_t SJA1105_Init(
     if (callbacks->callback_crc_reset == NULL) status = SJA1105_PARAMETER_ERROR;
     if (callbacks->callback_crc_accumulate == NULL) status = SJA1105_PARAMETER_ERROR;
 
-    /* Check SPI parameters */
-    if (config->spi_handle->Init.DataSize != SPI_DATASIZE_32BIT) status = SJA1105_PARAMETER_ERROR;
-    if (config->spi_handle->Init.CLKPolarity != SPI_POLARITY_LOW) status = SJA1105_PARAMETER_ERROR;
-    if (config->spi_handle->Init.CLKPhase != SPI_PHASE_2EDGE) status = SJA1105_PARAMETER_ERROR;
-    if (config->spi_handle->Init.NSS != SPI_NSS_SOFT) status = SJA1105_PARAMETER_ERROR;
-    if (config->spi_handle->Init.FirstBit != SPI_FIRSTBIT_MSB) status = SJA1105_PARAMETER_ERROR;
-
     /* If there are invalid parameters then return */
     if (status != SJA1105_OK) goto end;
 
     /* Assign the input arguments */
-    dev->config    = config;
-    dev->callbacks = callbacks;
+    dev->config           = config;
+    dev->callbacks        = callbacks;
+    dev->callback_context = callback_context;
 
     /* Reset tables (note this does not free memory) */
     SJA1105_ResetTables(dev, fixed_length_table_buffer);
@@ -127,11 +127,11 @@ sja1105_status_t SJA1105_Init(
     SJA1105_ResetManagementRoutes(dev);
 
     /* Set pins to a known state */
-    HAL_GPIO_WritePin(dev->config->rst_port, dev->config->rst_pin, SET);
-    HAL_GPIO_WritePin(dev->config->cs_port, dev->config->cs_pin, SET);
+    SJA1105_WRITE_RST_PIN(SJA1105_PIN_SET);
+    SJA1105_WRITE_CS_PIN(SJA1105_PIN_SET);
 
     /* Clear all previously allocated memory (usually just re-inits the byte pool) */
-    status = dev->callbacks->callback_free_all(dev);
+    status = SJA1105_FREE_ALL();
     if (status != SJA1105_OK) goto end;
 
     /* Load the static config into the internal tables. This will also write the ACU and CGU tables */
@@ -188,8 +188,9 @@ sja1105_status_t SJA1105_DeInit(sja1105_handle_t *dev, bool hard, bool clear_cou
 
     /* A hard deinit means clearing all config structs too */
     if (hard) {
-        dev->config    = NULL;
-        dev->callbacks = NULL;
+        dev->config           = NULL;
+        dev->callbacks        = NULL;
+        dev->callback_context = NULL;
     }
 
     /* Reset event counters */
@@ -221,7 +222,7 @@ sja1105_status_t SJA1105_ReInit(sja1105_handle_t *dev, const uint32_t *static_co
     status = SJA1105_DeInit(dev, false, false);
     if (status != SJA1105_OK) goto end;
 
-    status = SJA1105_Init(dev, dev->config, dev->callbacks, dev->tables.fixed_length_buffer, static_conf, static_conf_size);
+    status = SJA1105_Init(dev, dev->config, dev->callbacks, dev->callback_context, dev->tables.fixed_length_buffer, static_conf, static_conf_size);
     if (status != SJA1105_OK) goto end;
 
 /* Give the mutex and return */

@@ -16,17 +16,6 @@ extern "C" {
 #include "sja1105.h"
 
 
-#define SJA1105_LOCK                                                             \
-    do {                                                                         \
-        status = dev->callbacks->callback_take_mutex(dev, dev->config->timeout); \
-        if (status != SJA1105_OK) return status;                                 \
-    } while (0)
-
-#define SJA1105_UNLOCK       dev->callbacks->callback_give_mutex(dev)
-
-#define SJA1105_DELAY_NS(ns) dev->callbacks->callback_delay_ns(dev, (ns))
-#define SJA1105_DELAY_MS(ms) dev->callbacks->callback_delay_ms(dev, (ms))
-
 void SJA1105_ResetTables(sja1105_handle_t *dev, uint32_t fixed_length_table_buffer[SJA1105_FIXED_BUFFER_SIZE]);
 void SJA1105_ResetManagementRoutes(sja1105_handle_t *dev);
 void SJA1105_ResetEventCounters(sja1105_handle_t *dev);

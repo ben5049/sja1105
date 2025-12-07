@@ -298,22 +298,12 @@ sja1105_status_t SJA1105_ResetMACConfTable(sja1105_handle_t *dev, bool write) {
 
     /* Disable ingress, egress and learning */
     for (uint_fast8_t i = 0; i < SJA1105_NUM_PORTS; i++) {
-
-#ifdef SJA1105_PORTS_START_ENABLED
-        status = SJA1105_MACConfTableSetIngress(&dev->tables.mac_configuration, i, true);
+        status = SJA1105_MACConfTableSetIngress(&dev->tables.mac_configuration, i, SJA1105_PORTS_START_ENABLED);
         if (status != SJA1105_OK) return status;
-        status = SJA1105_MACConfTableSetEgress(&dev->tables.mac_configuration, i, true);
+        status = SJA1105_MACConfTableSetEgress(&dev->tables.mac_configuration, i, SJA1105_PORTS_START_ENABLED);
         if (status != SJA1105_OK) return status;
-        status = SJA1105_MACConfTableSetDynLearn(&dev->tables.mac_configuration, i, true);
+        status = SJA1105_MACConfTableSetDynLearn(&dev->tables.mac_configuration, i, SJA1105_PORTS_START_ENABLED);
         if (status != SJA1105_OK) return status;
-#else
-        status = SJA1105_MACConfTableSetIngress(&dev->tables.mac_configuration, i, false);
-        if (status != SJA1105_OK) return status;
-        status = SJA1105_MACConfTableSetEgress(&dev->tables.mac_configuration, i, false);
-        if (status != SJA1105_OK) return status;
-        status = SJA1105_MACConfTableSetDynLearn(&dev->tables.mac_configuration, i, false);
-        if (status != SJA1105_OK) return status;
-#endif
     }
 
     /* Write the configs if required */

@@ -537,7 +537,7 @@ sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint
     uint32_t lut_entry[SJA1105_L2ADDR_LU_ENTRY_SIZE] = {0, 0, 0, 0, 0};
     uint32_t reg_data;
     uint8_t  free_entry   = SJA1105_NUM_MGMT_SLOTS;
-    uint32_t current_time = dev->callbacks->callback_get_time_ms(dev);
+    uint32_t current_time = SJA1105_GET_TIME_MS();
 
     /* Look for a free slot */
     for (uint_fast8_t i = 0; i < SJA1105_NUM_MGMT_SLOTS; i++) {

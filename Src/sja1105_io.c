@@ -37,12 +37,12 @@ sja1105_status_t __SJA1105_ReadRegister(sja1105_handle_t *dev, uint32_t addr, ui
 
         /* Start the transaction after a delay (ensures successive transactions meet timing requirements) */
         SJA1105_DELAY_NS(SJA1105_T_SPI_WR);
-        HAL_GPIO_WritePin(dev->config->cs_port, dev->config->cs_pin, RESET);
+        SJA1105_WRITE_CS_PIN(SJA1105_PIN_RESET);
         SJA1105_DELAY_NS(SJA1105_T_SPI_LEAD);
 
         /* Send command frame */
-        if (HAL_SPI_Transmit(dev->config->spi_handle, (uint8_t *) &command_frame, 1, dev->config->timeout) != HAL_OK) {
-            status = SJA1105_SPI_ERROR;
+        status = SJA1105_SPI_TRANSMIT(&command_frame, 1);
+        if (status != SJA1105_OK) {
             dev->events.spi_errors++;
             goto end;
         }
@@ -54,28 +54,22 @@ sja1105_status_t __SJA1105_ReadRegister(sja1105_handle_t *dev, uint32_t addr, ui
         /* Receive data, if size = 1 then send dummy payload to test for faults */
         block_size = CONSTRAIN(dwords_remaining, 0, SJA1105_SPI_MAX_RX_PAYLOAD_SIZE);
         if ((size == 1) && integrity_check) {
-            if (HAL_SPI_TransmitReceive(dev->config->spi_handle, (uint8_t *) &dummy_payload, (uint8_t *) data, 1, dev->config->timeout) != HAL_OK) {
-                status = SJA1105_SPI_ERROR;
-                dev->events.spi_errors++;
+            status = SJA1105_SPI_TRANSMIT_RECEIVE(&dummy_payload, data, 1);
+            if (status != SJA1105_OK) {
                 goto end;
-            }
-            if (data[0] == dummy_payload) {
+            } else if (data[0] == dummy_payload) {
                 status = SJA1105_SPI_ERROR;
                 dev->events.spi_errors++;
                 goto end;
             }
         } else {
-            if (HAL_SPI_Receive(dev->config->spi_handle, (uint8_t *) &data[size - dwords_remaining], block_size, dev->config->timeout) != HAL_OK) {
-                status = SJA1105_SPI_ERROR;
-                dev->events.spi_errors++;
-                goto end;
-            }
+            status = SJA1105_SPI_RECEIVE(&data[size - dwords_remaining], block_size);
+            if (status != SJA1105_OK) goto end;
         }
-        dev->events.words_read += block_size;
 
         /* End the transaction */
         SJA1105_DELAY_NS(SJA1105_T_SPI_LAG);
-        HAL_GPIO_WritePin(dev->config->cs_port, dev->config->cs_pin, SET);
+        SJA1105_WRITE_CS_PIN(SJA1105_PIN_SET);
 
         /* Calculate the double words to receive remaining */
         dwords_remaining -= CONSTRAIN(dwords_remaining, 0, SJA1105_SPI_MAX_RX_PAYLOAD_SIZE);
@@ -112,7 +106,7 @@ sja1105_status_t SJA1105_PollFlag(sja1105_handle_t *dev, uint32_t addr, uint32_t
     for (uint_fast8_t i = 0; i < SJA1105_MAX_ATTEMPTS; i++) {
         status = SJA1105_ReadFlag(dev, addr, mask, &flag);
         if (status != SJA1105_OK || flag == polarity) break;
-        dev->callbacks->callback_delay_ms(dev, dev->config->timeout / SJA1105_MAX_ATTEMPTS);
+        SJA1105_DELAY_MS(dev->config->timeout / SJA1105_MAX_ATTEMPTS);
     }
 
     /* If the loop reaches the end and the flag hasn't been set */
@@ -162,29 +156,21 @@ sja1105_status_t SJA1105_WriteRegister(sja1105_handle_t *dev, uint32_t addr, con
 
         /* Start the transaction after a delay (ensures successive transactions meet timing requirements) */
         SJA1105_DELAY_NS(SJA1105_T_SPI_WR);
-        HAL_GPIO_WritePin(dev->config->cs_port, dev->config->cs_pin, RESET);
+        SJA1105_WRITE_CS_PIN(SJA1105_PIN_RESET);
         SJA1105_DELAY_NS(SJA1105_T_SPI_LEAD);
 
         /* Send command frame */
-        if (HAL_SPI_Transmit(dev->config->spi_handle, (uint8_t *) &command_frame, 1, dev->config->timeout) != HAL_OK) {
-            status = SJA1105_SPI_ERROR;
-            dev->events.spi_errors++;
-            goto end;
-        }
-        dev->events.words_written++;
+        status = SJA1105_SPI_TRANSMIT(&command_frame, 1);
+        if (status != SJA1105_OK) goto end;
 
         /* Send payload */
         block_size = CONSTRAIN(dwords_remaining, 0, SJA1105_SPI_MAX_TX_PAYLOAD_SIZE);
-        if (HAL_SPI_Transmit(dev->config->spi_handle, (uint8_t *) &data[size - dwords_remaining], block_size, dev->config->timeout) != HAL_OK) {
-            status = SJA1105_SPI_ERROR;
-            dev->events.spi_errors++;
-            goto end;
-        }
-        dev->events.words_written += block_size;
+        status     = SJA1105_SPI_TRANSMIT(&data[size - dwords_remaining], block_size);
+        if (status != SJA1105_OK) goto end;
 
         /* End the transaction */
         SJA1105_DELAY_NS(SJA1105_T_SPI_LAG);
-        HAL_GPIO_WritePin(dev->config->cs_port, dev->config->cs_pin, SET);
+        SJA1105_WRITE_CS_PIN(SJA1105_PIN_SET);
 
         /* Calculate the double words to transmit remaining */
         dwords_remaining -= CONSTRAIN(dwords_remaining, 0, SJA1105_SPI_MAX_TX_PAYLOAD_SIZE);
@@ -225,44 +211,28 @@ sja1105_status_t SJA1105_WriteTable(sja1105_handle_t *dev, uint32_t addr, sja110
 
     /* Start the transaction after a delay (ensures successive transactions meet timing requirements) */
     SJA1105_DELAY_NS(SJA1105_T_SPI_WR);
-    HAL_GPIO_WritePin(dev->config->cs_port, dev->config->cs_pin, RESET);
+    SJA1105_WRITE_CS_PIN(SJA1105_PIN_RESET);
     SJA1105_DELAY_NS(SJA1105_T_SPI_LEAD);
 
     /* Send command frame */
-    if (HAL_SPI_Transmit(dev->config->spi_handle, (uint8_t *) &command_frame, 1, dev->config->timeout) != HAL_OK) {
-        status = SJA1105_SPI_ERROR;
-        dev->events.spi_errors++;
-        goto end;
-    }
-    dev->events.words_written++;
+    status = SJA1105_SPI_TRANSMIT(&command_frame, 1);
+    if (status != SJA1105_OK) goto end;
 
     /* Send the header */
-    if (HAL_SPI_Transmit(dev->config->spi_handle, (uint8_t *) header, SJA1105_STATIC_CONF_BLOCK_HEADER + SJA1105_STATIC_CONF_BLOCK_HEADER_CRC, dev->config->timeout) != HAL_OK) {
-        status = SJA1105_SPI_ERROR;
-        dev->events.spi_errors++;
-        goto end;
-    }
-    dev->events.words_written += SJA1105_STATIC_CONF_BLOCK_HEADER + SJA1105_STATIC_CONF_BLOCK_HEADER_CRC;
+    status = SJA1105_SPI_TRANSMIT(header, SJA1105_STATIC_CONF_BLOCK_HEADER + SJA1105_STATIC_CONF_BLOCK_HEADER_CRC);
+    if (status != SJA1105_OK) goto end;
 
     /* Send the data */
-    if (HAL_SPI_Transmit(dev->config->spi_handle, (uint8_t *) table->data, *table->size, dev->config->timeout) != HAL_OK) {
-        status = SJA1105_SPI_ERROR;
-        dev->events.spi_errors++;
-        goto end;
-    }
-    dev->events.words_written += *table->size;
+    status = SJA1105_SPI_TRANSMIT(table->data, *table->size);
+    if (status != SJA1105_OK) goto end;
 
     /* Send the data CRC */
-    if (HAL_SPI_Transmit(dev->config->spi_handle, (uint8_t *) table->data_crc, 1, dev->config->timeout) != HAL_OK) {
-        status = SJA1105_SPI_ERROR;
-        dev->events.spi_errors++;
-        goto end;
-    }
-    dev->events.words_written++;
+    status = SJA1105_SPI_TRANSMIT(table->data_crc, 1);
+    if (status != SJA1105_OK) goto end;
 
     /* End the transaction */
     SJA1105_DELAY_NS(SJA1105_T_SPI_LAG);
-    HAL_GPIO_WritePin(dev->config->cs_port, dev->config->cs_pin, SET);
+    SJA1105_WRITE_CS_PIN(SJA1105_PIN_SET);
 
     /* Check the block had no CRC errors if required to */
     if (safe) {
@@ -282,17 +252,18 @@ sja1105_status_t SJA1105_WriteTable(sja1105_handle_t *dev, uint32_t addr, sja110
     if (!dev->tables.global_crc_valid) {
 
         /* Add the header to the CRC */
-        status = dev->callbacks->callback_crc_accumulate(dev, header, SJA1105_STATIC_CONF_BLOCK_HEADER + SJA1105_STATIC_CONF_BLOCK_HEADER_CRC, &crc_value);
+        status = SJA1105_CRC_ACCUMULATE(header, SJA1105_STATIC_CONF_BLOCK_HEADER + SJA1105_STATIC_CONF_BLOCK_HEADER_CRC, &crc_value);
         if (status != SJA1105_OK) goto end;
 
         /* Add the data to the CRC */
-        status = dev->callbacks->callback_crc_accumulate(dev, table->data, *table->size, &crc_value);
+        status = SJA1105_CRC_ACCUMULATE(table->data, *table->size, &crc_value);
         if (status != SJA1105_OK) goto end;
 
         /* Add the data CRC to the CRC */
-        status = dev->callbacks->callback_crc_accumulate(dev, table->data_crc, 1, &crc_value);
+        status = SJA1105_CRC_ACCUMULATE(table->data_crc, 1, &crc_value);
         if (status != SJA1105_OK) goto end;
     }
+
 end:
 
     return status;
@@ -342,20 +313,16 @@ sja1105_status_t SJA1105_L2LUTInvalidateRange(sja1105_handle_t *dev, uint16_t lo
 
         /* Start the transaction after a delay (ensures successive transactions meet timing requirements) */
         SJA1105_DELAY_NS(SJA1105_T_SPI_WR);
-        HAL_GPIO_WritePin(dev->config->cs_port, dev->config->cs_pin, RESET);
+        SJA1105_WRITE_CS_PIN(SJA1105_PIN_RESET);
         SJA1105_DELAY_NS(SJA1105_T_SPI_LEAD);
 
         /* Write the invalidate command */
-        if (HAL_SPI_Transmit(dev->config->spi_handle, (uint8_t *) reg_data, size, dev->config->timeout) != HAL_OK) {
-            status = SJA1105_SPI_ERROR;
-            dev->events.spi_errors++;
-            goto end;
-        }
-        dev->events.words_written += size;
+        status = SJA1105_SPI_TRANSMIT(reg_data, size);
+        if (status != SJA1105_OK) goto end;
 
         /* End the transaction */
         SJA1105_DELAY_NS(SJA1105_T_SPI_LAG);
-        HAL_GPIO_WritePin(dev->config->cs_port, dev->config->cs_pin, SET);
+        SJA1105_WRITE_CS_PIN(SJA1105_PIN_SET);
     }
 
 end:
@@ -365,9 +332,9 @@ end:
 
 
 void SJA1105_FullReset(sja1105_handle_t *dev) {
-    HAL_GPIO_WritePin(dev->config->rst_port, dev->config->rst_pin, RESET);
+    SJA1105_WRITE_RST_PIN(SJA1105_PIN_RESET);
     SJA1105_DELAY_NS(SJA1105_T_RST); /* 5us delay */
-    HAL_GPIO_WritePin(dev->config->rst_port, dev->config->rst_pin, SET);
+    SJA1105_WRITE_RST_PIN(SJA1105_PIN_SET);
     SJA1105_DELAY_MS(1);             /* 329us minimum until SPI commands can be written (SJA1105_T_RST_STARTUP_HW). Use a 1ms non-blocking delay so the RTOS can do other work */
 
     /* Increment the internal reset counter */

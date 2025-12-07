@@ -75,15 +75,15 @@ sja1105_status_t SJA1105_FreeAllTableMemory(sja1105_handle_t *dev) {
 
             /* Variable length tables need everything freed */
             case SJA1105_TABLE_VARIABLE_LENGTH:
-                status = dev->callbacks->callback_free(dev, (uint32_t *) table.id);
+                status = SJA1105_FREE((uint32_t *) table.id);
                 if (status != SJA1105_OK) return status;
-                status = dev->callbacks->callback_free(dev, table.size);
+                status = SJA1105_FREE(table.size);
                 if (status != SJA1105_OK) return status;
-                status = dev->callbacks->callback_free(dev, table.header_crc);
+                status = SJA1105_FREE(table.header_crc);
                 if (status != SJA1105_OK) return status;
-                status = dev->callbacks->callback_free(dev, table.data);
+                status = SJA1105_FREE(table.data);
                 if (status != SJA1105_OK) return status;
-                status = dev->callbacks->callback_free(dev, table.data_crc);
+                status = SJA1105_FREE(table.data_crc);
                 if (status != SJA1105_OK) return status;
                 table.in_use         = false;
                 table.data_crc_valid = false;
@@ -127,9 +127,9 @@ sja1105_status_t SJA1105_AllocateFixedLengthTable(sja1105_handle_t *dev, const u
     if (status != SJA1105_OK) return status;
 
     /* Check header CRC */
-    status = dev->callbacks->callback_crc_reset(dev);
+    status = SJA1105_CRC_RESET();
     if (status != SJA1105_OK) return status;
-    status = dev->callbacks->callback_crc_accumulate(dev, block, SJA1105_STATIC_CONF_BLOCK_HEADER, &header_crc);
+    status = SJA1105_CRC_ACCUMULATE(block, SJA1105_STATIC_CONF_BLOCK_HEADER, &header_crc);
     if (status != SJA1105_OK) return status;
     if ((header_crc != block[SJA1105_STATIC_CONF_HEADER_CRC_OFFSET]) && (block[SJA1105_STATIC_CONF_HEADER_CRC_OFFSET] != 0)) {
         status = SJA1105_CRC_ERROR;
@@ -138,9 +138,9 @@ sja1105_status_t SJA1105_AllocateFixedLengthTable(sja1105_handle_t *dev, const u
     }
 
     /* Check data CRC */
-    status = dev->callbacks->callback_crc_reset(dev);
+    status = SJA1105_CRC_RESET();
     if (status != SJA1105_OK) return status;
-    status = dev->callbacks->callback_crc_accumulate(dev, block + SJA1105_STATIC_CONF_DATA_OFFSET, size, &data_crc);
+    status = SJA1105_CRC_ACCUMULATE(block + SJA1105_STATIC_CONF_DATA_OFFSET, size, &data_crc);
     if (status != SJA1105_OK) return status;
     if ((data_crc != block[block_size - 1]) && (block[block_size - 1] != 0)) {
         status = SJA1105_CRC_ERROR;
@@ -197,9 +197,9 @@ sja1105_status_t SJA1105_AllocateVariableLengthTable(sja1105_handle_t *dev, cons
     if (status != SJA1105_OK) return status;
 
     /* Check header CRC */
-    status = dev->callbacks->callback_crc_reset(dev);
+    status = SJA1105_CRC_RESET();
     if (status != SJA1105_OK) return status;
-    status = dev->callbacks->callback_crc_accumulate(dev, block, SJA1105_STATIC_CONF_BLOCK_HEADER, &header_crc);
+    status = SJA1105_CRC_ACCUMULATE(block, SJA1105_STATIC_CONF_BLOCK_HEADER, &header_crc);
     if (status != SJA1105_OK) return status;
     if ((header_crc != block[SJA1105_STATIC_CONF_HEADER_CRC_OFFSET]) && (block[SJA1105_STATIC_CONF_HEADER_CRC_OFFSET] != 0)) {
         status = SJA1105_CRC_ERROR;
@@ -208,9 +208,9 @@ sja1105_status_t SJA1105_AllocateVariableLengthTable(sja1105_handle_t *dev, cons
     }
 
     /* Check data CRC */
-    status = dev->callbacks->callback_crc_reset(dev);
+    status = SJA1105_CRC_RESET();
     if (status != SJA1105_OK) return status;
-    status = dev->callbacks->callback_crc_accumulate(dev, block + SJA1105_STATIC_CONF_DATA_OFFSET, size, &data_crc);
+    status = SJA1105_CRC_ACCUMULATE(block + SJA1105_STATIC_CONF_DATA_OFFSET, size, &data_crc);
     if (status != SJA1105_OK) return status;
     if ((data_crc != block[block_size - 1]) && (block[block_size - 1] != 0)) {
         status = SJA1105_CRC_ERROR;
@@ -219,15 +219,15 @@ sja1105_status_t SJA1105_AllocateVariableLengthTable(sja1105_handle_t *dev, cons
     }
 
     /* Allocate the memory */
-    status = dev->callbacks->callback_allocate(dev, (uint32_t **) &table->id, SJA1105_STATIC_CONF_BLOCK_ID);
+    status = SJA1105_ALLOCATE((uint32_t **) &table->id, SJA1105_STATIC_CONF_BLOCK_ID);
     if (status != SJA1105_OK) return status;
-    status = dev->callbacks->callback_allocate(dev, &table->size, SJA1105_STATIC_CONF_BLOCK_SIZE);
+    status = SJA1105_ALLOCATE(&table->size, SJA1105_STATIC_CONF_BLOCK_SIZE);
     if (status != SJA1105_OK) return status;
-    status = dev->callbacks->callback_allocate(dev, &table->header_crc, SJA1105_STATIC_CONF_BLOCK_HEADER_CRC);
+    status = SJA1105_ALLOCATE(&table->header_crc, SJA1105_STATIC_CONF_BLOCK_HEADER_CRC);
     if (status != SJA1105_OK) return status;
-    status = dev->callbacks->callback_allocate(dev, &table->data, size);
+    status = SJA1105_ALLOCATE(&table->data, size);
     if (status != SJA1105_OK) return status;
-    status = dev->callbacks->callback_allocate(dev, &table->data_crc, SJA1105_STATIC_CONF_BLOCK_DATA_CRC);
+    status = SJA1105_ALLOCATE(&table->data_crc, SJA1105_STATIC_CONF_BLOCK_DATA_CRC);
     if (status != SJA1105_OK) return status;
 
     /* Copy in the values */
@@ -365,9 +365,9 @@ sja1105_status_t SJA1105_WriteStaticConfig(sja1105_handle_t *dev, bool safe) {
         /* Calculate the CRC. Don't rely on a pre-computed CRCs in safe mode */
         if (table->in_use && (!table->data_crc_valid || safe)) {
             dev->tables.global_crc_valid = false;
-            status                       = dev->callbacks->callback_crc_reset(dev);
+            status                       = SJA1105_CRC_RESET();
             if (status != SJA1105_OK) return status;
-            status = dev->callbacks->callback_crc_accumulate(dev, table->data, *table->size, &crc_value);
+            status = SJA1105_CRC_ACCUMULATE(table->data, *table->size, &crc_value);
             if (status != SJA1105_OK) return status;
             *table->data_crc      = crc_value;
             table->data_crc_valid = true;
@@ -389,9 +389,9 @@ sja1105_status_t SJA1105_WriteStaticConfig(sja1105_handle_t *dev, bool safe) {
 
     /* Reset the CRC and accumulate the device ID */
     if (!dev->tables.global_crc_valid) {
-        status = dev->callbacks->callback_crc_reset(dev);
+        status = SJA1105_CRC_RESET();
         if (status != SJA1105_OK) return status;
-        status = dev->callbacks->callback_crc_accumulate(dev, dev->tables.device_id, 1, &crc_value);
+        status = SJA1105_CRC_ACCUMULATE(dev->tables.device_id, 1, &crc_value);
         if (status != SJA1105_OK) return status;
     }
 
@@ -423,7 +423,7 @@ sja1105_status_t SJA1105_WriteStaticConfig(sja1105_handle_t *dev, bool safe) {
 
         /* Calculate the CRC for the fixed length tables */
         if (!dev->tables.global_crc_valid) {
-            status = dev->callbacks->callback_crc_accumulate(dev, dev->tables.fixed_length_buffer + 1, offset - 1, &crc_value);
+            status = SJA1105_CRC_ACCUMULATE(dev->tables.fixed_length_buffer + 1, offset - 1, &crc_value);
             if (status != SJA1105_OK) return status;
         }
 
@@ -442,7 +442,7 @@ sja1105_status_t SJA1105_WriteStaticConfig(sja1105_handle_t *dev, bool safe) {
 
     /* Finish calculating the global CRC */
     if (!dev->tables.global_crc_valid) {
-        status = dev->callbacks->callback_crc_accumulate(dev, end_block, SJA1105_STATIC_CONF_BLOCK_LAST_SIZE - 1, &crc_value);
+        status = SJA1105_CRC_ACCUMULATE(end_block, SJA1105_STATIC_CONF_BLOCK_LAST_SIZE - 1, &crc_value);
         if (status != SJA1105_OK) return status;
         end_block[SJA1105_STATIC_CONF_BLOCK_LAST_SIZE - 1] = crc_value;
         dev->tables.global_crc_valid                       = true;

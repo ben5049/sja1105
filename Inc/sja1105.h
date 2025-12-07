@@ -14,7 +14,6 @@ extern "C" {
 #endif
 
 /* Includes*/
-#include "hal.h"
 #include "stdint.h"
 #include "stdbool.h"
 #include "stdatomic.h"
@@ -37,10 +36,14 @@ extern "C" {
 #define SJA1105_L2ADDR_LU_NUM_ENTRIES (1024)
 
 #ifndef SJA1105_PORTS_START_ENABLED
-#define SJA1105_PORTS_START_ENABLED
+#define SJA1105_PORTS_START_ENABLED true /* Override to "false" to disable port ingress, egress and learning at startup */
 #endif
 
 #define SJA1105_SPEED_MBPS_TO_ENUM(mbps) (((mbps) == 10) ? SJA1105_SPEED_10M : (((mbps) == 100) ? SJA1105_SPEED_100M : (((mbps) == 1000) ? SJA1105_SPEED_1G : SJA1105_SPEED_INVALID)))
+
+#if !defined(UNUSED)
+#define UNUSED(x) ((void) (x))
+#endif
 
 
 /* Typedefs */
@@ -48,24 +51,29 @@ extern "C" {
 typedef struct sja1105_handle_t sja1105_handle_t;
 
 typedef enum {
-    SJA1105_OK      = HAL_OK,
-    SJA1105_ERROR   = HAL_ERROR,
-    SJA1105_BUSY    = HAL_BUSY,
-    SJA1105_TIMEOUT = HAL_TIMEOUT,
+    SJA1105_PIN_SET,
+    SJA1105_PIN_RESET
+} sja1105_pinstate_t;
+
+typedef enum {
+    SJA1105_OK,
+    SJA1105_ERROR,
+    SJA1105_BUSY,
+    SJA1105_TIMEOUT,
     SJA1105_PARAMETER_ERROR,
     SJA1105_ALREADY_CONFIGURED_ERROR, /* Error when attempting to init an already initialised device or configure a port that has already been configured. */
     SJA1105_NOT_CONFIGURED_ERROR,
-    SJA1105_SPI_ERROR,
+    SJA1105_SPI_ERROR,                /* Error occured during SPI transaction, typically set in the SPI user callbacks */
     SJA1105_ID_ERROR,
-    SJA1105_STATIC_CONF_ERROR,
-    SJA1105_MISSING_TABLE_ERROR,    /* A required table or a dependancy for a loaded table is missing */
-    SJA1105_CRC_ERROR,              /* CRC Error detected in a static configuration, either by the driver or by the chip */
-    SJA1105_RAM_PARITY_ERROR,       /* RAM Parity error detected in one of the chip's memories, must be immediately reset */
+    SJA1105_STATIC_CONF_ERROR,        /* The static config being processed contains an error */
+    SJA1105_MISSING_TABLE_ERROR,      /* A required table or a dependancy for a loaded table is missing */
+    SJA1105_CRC_ERROR,                /* CRC Error detected in a static configuration, either by the driver or by the chip */
+    SJA1105_RAM_PARITY_ERROR,         /* RAM Parity error detected in one of the chip's memories, must be immediately reset */
     SJA1105_NOT_IMPLEMENTED_ERROR,
-    SJA1105_MUTEX_ERROR,            /* Serious mutex error, will normally just return SJA1105_BUSY if it tries to take a mutex held by another thread */
-    SJA1105_DYNAMIC_MEMORY_ERROR,   /* Attempted to re-allocate without free, or free after free */
-    SJA1105_DYNAMIC_RECONFIG_ERROR, /* VALID bit not set after performing a dynamic reconfiguration */
-    SJA1105_REVERT_ERROR,           /* Catastrophic error has occured such as an error while fixing another error */
+    SJA1105_MUTEX_ERROR,              /* Serious mutex error, will normally just return SJA1105_BUSY if it tries to take a mutex held by another thread */
+    SJA1105_DYNAMIC_MEMORY_ERROR,     /* Attempted to re-allocate without free, or free after free */
+    SJA1105_DYNAMIC_RECONFIG_ERROR,   /* VALID bit not set after performing a dynamic reconfiguration */
+    SJA1105_REVERT_ERROR,             /* Catastrophic error has occured such as an error while fixing another error */
     SJA1105_NO_FREE_MGMT_ROUTES_ERROR,
     SJA1105_MEMORY_ERROR,
     SJA1105_STATIC_CONF_FLAGS_READ_ERROR,
@@ -124,18 +132,13 @@ typedef struct {
 } sja1105_port_t;
 
 typedef struct {
-    sja1105_variant_t  variant;
-    sja1105_port_t     ports[SJA1105_NUM_PORTS];
-    SPI_HandleTypeDef *spi_handle;
-    GPIO_TypeDef      *cs_port;
-    uint16_t           cs_pin;
-    GPIO_TypeDef      *rst_port;
-    uint16_t           rst_pin;
-    uint32_t           timeout;      /* Timeout in ms for doing anything with a timeout (read, write, take mutex etc) */
-    uint32_t           mgmt_timeout; /* Time in ms after creating a manamegement route that it can be overwriten if it hasn't been used */
-    uint8_t            host_port;
-    bool               skew_clocks;  /* Make xMII clocks use different phases (where possible) to improve EMC performance */
-    uint8_t            switch_id;    /* Used to identify the switch that trapped a frame */
+    sja1105_variant_t variant;
+    sja1105_port_t    ports[SJA1105_NUM_PORTS];
+    uint32_t          timeout;      /* Timeout in ms for doing anything with a timeout (read, write, take mutex etc) */
+    uint32_t          mgmt_timeout; /* Time in ms after creating a manamegement route that it can be overwriten if it hasn't been used */
+    uint8_t           host_port;
+    bool              skew_clocks;  /* Make xMII clocks use different phases (where possible) to improve EMC performance */
+    uint8_t           switch_id;    /* Used to identify the switch that trapped a frame */
 } sja1105_config_t;
 
 typedef struct {
@@ -225,33 +228,44 @@ typedef struct {
     void    *contexts[SJA1105_NUM_MGMT_SLOTS];   /* Context set by SJA1105_ManagementRouteCreate() caller so they can tell if their entry has been evicted. */
 } sja1105_mgmt_routes_t;
 
-typedef uint32_t (*sja1105_callback_get_time_ms_t)(sja1105_handle_t *dev);
-typedef void (*sja1105_callback_delay_ms_t)(sja1105_handle_t *dev, uint32_t ms);
-typedef void (*sja1105_callback_delay_ns_t)(sja1105_handle_t *dev, uint32_t ns);
-typedef sja1105_status_t (*sja1105_callback_take_mutex_t)(sja1105_handle_t *dev, uint32_t timeout);
-typedef sja1105_status_t (*sja1105_callback_give_mutex_t)(sja1105_handle_t *dev);
-typedef sja1105_status_t (*sja1105_callback_allocate_t)(sja1105_handle_t *dev, uint32_t **memory_ptr, uint32_t size);
-typedef sja1105_status_t (*sja1105_callback_free_t)(sja1105_handle_t *dev, uint32_t *memory_ptr);
-typedef sja1105_status_t (*sja1105_callback_free_all_t)(sja1105_handle_t *dev);
-typedef sja1105_status_t (*sja1105_callback_crc_reset_t)(sja1105_handle_t *dev);
-typedef sja1105_status_t (*sja1105_callback_crc_accumulate_t)(sja1105_handle_t *dev, const uint32_t *buffer, uint32_t size, uint32_t *result);
+typedef void (*sja1105_callback_write_rst_pin_t)(sja1105_pinstate_t state, void *context);
+typedef void (*sja1105_callback_write_cs_pin_t)(sja1105_pinstate_t state, void *context);
+typedef sja1105_status_t (*sja1105_callback_spi_transmit_t)(const uint32_t *data, uint16_t size, uint32_t timeout, void *context);
+typedef sja1105_status_t (*sja1105_callback_spi_receive_t)(uint32_t *data, uint16_t size, uint32_t timeout, void *context);
+typedef sja1105_status_t (*sja1105_callback_spi_transmit_receive_t)(const uint32_t *tx_data, uint32_t *rx_data, uint16_t size, uint32_t timeout, void *context);
+typedef uint32_t (*sja1105_callback_get_time_ms_t)(void *context);
+typedef void (*sja1105_callback_delay_ms_t)(uint32_t ms, void *context);
+typedef void (*sja1105_callback_delay_ns_t)(uint32_t ns, void *context);
+typedef sja1105_status_t (*sja1105_callback_take_mutex_t)(uint32_t timeout, void *context);
+typedef sja1105_status_t (*sja1105_callback_give_mutex_t)(void *context);
+typedef sja1105_status_t (*sja1105_callback_allocate_t)(uint32_t **memory_ptr, uint32_t size, void *context);
+typedef sja1105_status_t (*sja1105_callback_free_t)(uint32_t *memory_ptr, void *context);
+typedef sja1105_status_t (*sja1105_callback_free_all_t)(void *context);
+typedef sja1105_status_t (*sja1105_callback_crc_reset_t)(void *context);
+typedef sja1105_status_t (*sja1105_callback_crc_accumulate_t)(const uint32_t *buffer, uint32_t size, uint32_t *result, void *context);
 
 typedef struct {
-    sja1105_callback_get_time_ms_t    callback_get_time_ms;    /* Get time in ms */
-    sja1105_callback_delay_ms_t       callback_delay_ms;       /* Non-blocking delay in ms */
-    sja1105_callback_delay_ns_t       callback_delay_ns;       /* Blocking delay in ns */
-    sja1105_callback_take_mutex_t     callback_take_mutex;     /* Take the mutex protecting the device */
-    sja1105_callback_give_mutex_t     callback_give_mutex;     /* Give the mutex protecting the device */
-    sja1105_callback_allocate_t       callback_allocate;       /* Allocate a given number of 32-bit words */
-    sja1105_callback_free_t           callback_free;           /* Free memory */
-    sja1105_callback_free_all_t       callback_free_all;       /* Free all allocated memory */
-    sja1105_callback_crc_reset_t      callback_crc_reset;      /* Reset the CRC state before starting */
-    sja1105_callback_crc_accumulate_t callback_crc_accumulate; /* Compute the CRC over new data, and all previous data since the last reset */
+    sja1105_callback_write_rst_pin_t        callback_write_rst_pin;        /* Write change the state of the reset pin */
+    sja1105_callback_write_cs_pin_t         callback_write_cs_pin;         /* Write change the state of the chip select (CS) pin */
+    sja1105_callback_spi_transmit_t         callback_spi_transmit;         /* Write data via SPI */
+    sja1105_callback_spi_receive_t          callback_spi_receive;          /* Read data via SPI */
+    sja1105_callback_spi_transmit_receive_t callback_spi_transmit_receive; /* Write and read data via SPI */
+    sja1105_callback_get_time_ms_t          callback_get_time_ms;          /* Get time in ms */
+    sja1105_callback_delay_ms_t             callback_delay_ms;             /* Non-blocking delay in ms */
+    sja1105_callback_delay_ns_t             callback_delay_ns;             /* Blocking delay in ns */
+    sja1105_callback_take_mutex_t           callback_take_mutex;           /* Take the mutex protecting the device */
+    sja1105_callback_give_mutex_t           callback_give_mutex;           /* Give the mutex protecting the device */
+    sja1105_callback_allocate_t             callback_allocate;             /* Allocate a given number of 32-bit words */
+    sja1105_callback_free_t                 callback_free;                 /* Free memory */
+    sja1105_callback_free_all_t             callback_free_all;             /* Free all allocated memory */
+    sja1105_callback_crc_reset_t            callback_crc_reset;            /* Reset the CRC state before starting */
+    sja1105_callback_crc_accumulate_t       callback_crc_accumulate;       /* Compute the CRC over new data, and all previous data since the last reset */
 } sja1105_callbacks_t;
 
 struct sja1105_handle_t {
     const sja1105_config_t    *config;
     const sja1105_callbacks_t *callbacks;
+    void                      *callback_context;
     sja1105_tables_t           tables;
     sja1105_event_counters_t   events;
     sja1105_mgmt_routes_t      management_routes;
@@ -270,7 +284,7 @@ typedef struct {
 
 /* Initialisation */
 sja1105_status_t SJA1105_PortConfigure(sja1105_config_t *config, const sja1105_port_t *port_config);
-sja1105_status_t SJA1105_Init(sja1105_handle_t *dev, const sja1105_config_t *config, const sja1105_callbacks_t *callbacks, uint32_t fixed_length_table_buffer[SJA1105_FIXED_BUFFER_SIZE], const uint32_t *static_conf, uint32_t static_conf_size);
+sja1105_status_t SJA1105_Init(sja1105_handle_t *dev, const sja1105_config_t *config, const sja1105_callbacks_t *callbacks, void *callback_context, uint32_t fixed_length_table_buffer[SJA1105_FIXED_BUFFER_SIZE], const uint32_t *static_conf, uint32_t static_conf_size);
 sja1105_status_t SJA1105_DeInit(sja1105_handle_t *dev, bool hard, bool clear_counters);
 sja1105_status_t SJA1105_ReInit(sja1105_handle_t *dev, const uint32_t *static_conf, uint32_t static_conf_size);
 

@@ -1,4 +1,4 @@
-# SJA1105 Driver for STM32
+# SJA1105 Driver
 
 
 This driver is intended for use on microcontroller platforms to control the SJA1105 automotive ethernet switch. This driver stores copies of the static configuration tables that mirror the state of the switch. When a change is required to a table that supports dynamic reconfiguration then this is done via the SPI interface. If a table doesn't support dynamic reconfiguration then the whole static configuration must be loaded again.
@@ -12,7 +12,7 @@ To store the configuration tables, two methods are used simultaneously, one for 
 
 ![fixed-length-table-structure](Images/fixed-length-table-structure.png)
 
-- *Variable Length Tables:* These tables (such as the VLAN Lookup table) contain a variable number of entries, and it doesn't make sense to store them in an array (since everything after the table would need to be moved to add a new entry). Instead these tables are stored in dynamically allocated memory, which is allocated and freed through the relevant callback functions. There can be up to 22,007x 32-bit words of dynamic entries (including headers and CRCs) so if a byte pool is used it is recommended to size it accordingly to the maximum expected use (E.g. not all 4096 VLAN entries are likely to be used).
+- **[CURRENTLY BROKEN]** *Variable Length Tables:* These tables (such as the VLAN Lookup table) contain a variable number of entries, and it doesn't make sense to store them in an array (since everything after the table would need to be moved to add a new entry). Instead these tables are stored in dynamically allocated memory, which is allocated and freed through the relevant callback functions. There can be up to 22,007x 32-bit words of dynamic entries (including headers and CRCs) so if a byte pool is used it is recommended to size it accordingly to the maximum expected use (E.g. not all 4096 VLAN entries are likely to be used).
 
 ![variable-length-table-structure](Images/variable-length-table-structure.png)
 
@@ -23,3 +23,7 @@ Note that the last block of the generic loader format (which includes the gloaba
 ## Thread Safety
 
 All the functions in sja1105.h are thread safe, with the exception of SJA1105_PortConfigure() which should only be called from a single thread at startup and before SJA1105_Init().
+
+## Setup
+
+See [here](https://github.com/ben5049/switch-v4-firmware/blob/main/primary/NonSecure/Application/Src/switch/switch_callbacks.c) for how to implement the necessary callbacks.
