@@ -41,8 +41,12 @@ extern "C" {
 
 #define SJA1105_SPEED_MBPS_TO_ENUM(mbps) (((mbps) == 10) ? SJA1105_SPEED_10M : (((mbps) == 100) ? SJA1105_SPEED_100M : (((mbps) == 1000) ? SJA1105_SPEED_1G : SJA1105_SPEED_INVALID)))
 
-#if !defined(UNUSED)
+#ifndef UNUSED
 #define UNUSED(x) ((void) (x))
+#endif
+
+#ifndef SJA1105_LOGGING_ENABLED
+#define SJA1105_LOGGING_ENABLED (1)
 #endif
 
 
@@ -243,6 +247,7 @@ typedef sja1105_status_t (*sja1105_callback_free_t)(uint32_t *memory_ptr, void *
 typedef sja1105_status_t (*sja1105_callback_free_all_t)(void *context);
 typedef sja1105_status_t (*sja1105_callback_crc_reset_t)(void *context);
 typedef sja1105_status_t (*sja1105_callback_crc_accumulate_t)(const uint32_t *buffer, uint32_t size, uint32_t *result, void *context);
+typedef void (*sja1105_callback_write_log_t)(const char *format, ...);
 
 typedef struct {
     sja1105_callback_write_rst_pin_t        callback_write_rst_pin;        /* Write change the state of the reset pin */
@@ -260,6 +265,7 @@ typedef struct {
     sja1105_callback_free_all_t             callback_free_all;             /* Free all allocated memory */
     sja1105_callback_crc_reset_t            callback_crc_reset;            /* Reset the CRC state before starting */
     sja1105_callback_crc_accumulate_t       callback_crc_accumulate;       /* Compute the CRC over new data, and all previous data since the last reset */
+    sja1105_callback_write_log_t            callback_write_log;            /* Write a log message */
 } sja1105_callbacks_t;
 
 struct sja1105_handle_t {

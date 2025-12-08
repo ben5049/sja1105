@@ -98,6 +98,11 @@ extern "C" {
 #define SJA1105_CRC_RESET()                          dev->callbacks->callback_crc_reset(dev->callback_context)
 #define SJA1105_CRC_ACCUMULATE(buffer, size, result) dev->callbacks->callback_crc_accumulate((buffer), (size), (result), dev->callback_context)
 
+#if SJA1105_LOGGING_ENABLED == 1
+#define SJA1105_LOG(format, ...) dev->callbacks->callback_write_log("%s:%d " format, __FILE_NAME__, __LINE__, ##__VA_ARGS__)
+#else
+#define SJA1105_LOG(format, ...)
+#endif
 
 sja1105_status_t SJA1105_ReadRegister(sja1105_handle_t *dev, uint32_t addr, uint32_t *data, uint32_t size);
 sja1105_status_t SJA1105_ReadRegisterWithCheck(sja1105_handle_t *dev, uint32_t addr, uint32_t *data, uint32_t size);
