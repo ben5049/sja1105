@@ -99,7 +99,7 @@ extern "C" {
 #define SJA1105_CRC_ACCUMULATE(buffer, size, result) dev->callbacks->callback_crc_accumulate((buffer), (size), (result), dev->callback_context)
 
 #if SJA1105_LOGGING_ENABLED == 1
-#define SJA1105_LOG(format, ...) dev->callbacks->callback_write_log("%s:%d " format, __FILE_NAME__, __LINE__, ##__VA_ARGS__)
+#define SJA1105_LOG(format, ...) dev->callbacks->callback_write_log("%s:%u (id=%u) " format, __FILE_NAME__, __LINE__, dev->config.switch_id, ##__VA_ARGS__)
 #else
 #define SJA1105_LOG(format, ...)
 #endif
