@@ -130,8 +130,10 @@ typedef struct {
     sja1105_interface_t  interface;
     sja1105_mode_t       mode;
     sja1105_io_voltage_t voltage;
-    bool                 output_rmii_refclk; /* Only used when interface = SJA1105_INTERFACE_RMII and mode = SJA1105_MODE_PHY */
-    bool                 rx_error_unused;    /* Only used when interface is MII or RMII. Controls whether or not the RX_ERR input is pulled down */
+    bool                 output_rmii_refclk;        /* Only used when interface = SJA1105_INTERFACE_RMII and mode = SJA1105_MODE_PHY */
+    bool                 rx_error_unused;           /* Only used when interface is MII or RMII. Controls whether or not the RX_ERR input is pulled down */
+    sja1105_handle_t    *connected_switch_handle;   /* For cascaded SJA1105s. Pointer to switch connected on this port */
+    uint8_t              connected_switch_port_num; /* For cascaded SJA1105s. Port number of switch connected on this port */
     bool                 configured;
 } sja1105_port_t;
 
@@ -141,6 +143,7 @@ typedef struct {
     uint32_t          timeout;      /* Timeout in ms for doing anything with a timeout (read, write, take mutex etc) */
     uint32_t          mgmt_timeout; /* Time in ms after creating a manamegement route that it can be overwriten if it hasn't been used */
     uint8_t           host_port;
+    uint8_t           casc_port;    /* Port connected to another switch downstream from the host */
     bool              skew_clocks;  /* Make xMII clocks use different phases (where possible) to improve EMC performance */
     uint8_t           switch_id;    /* Used to identify the switch that trapped a frame */
 } sja1105_config_t;
@@ -289,7 +292,7 @@ typedef struct {
 /* Functions */
 
 /* Initialisation */
-sja1105_status_t SJA1105_PortConfigure(sja1105_config_t *config, const sja1105_port_t *port_config);
+sja1105_status_t SJA1105_PortConfigure(sja1105_config_t *config, const sja1105_port_t *port_config, bool cascaded);
 sja1105_status_t SJA1105_Init(sja1105_handle_t *dev, const sja1105_config_t *config, const sja1105_callbacks_t *callbacks, void *callback_context, uint32_t fixed_length_table_buffer[SJA1105_FIXED_BUFFER_SIZE], const uint32_t *static_conf, uint32_t static_conf_size);
 sja1105_status_t SJA1105_DeInit(sja1105_handle_t *dev, bool hard, bool clear_counters);
 sja1105_status_t SJA1105_ReInit(sja1105_handle_t *dev, const uint32_t *static_conf, uint32_t static_conf_size);

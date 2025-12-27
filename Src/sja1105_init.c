@@ -15,7 +15,7 @@
 #include "internal/sja1105_tables.h"
 
 
-sja1105_status_t SJA1105_PortConfigure(sja1105_config_t *config, const sja1105_port_t *port_config) {
+sja1105_status_t SJA1105_PortConfigure(sja1105_config_t *config, const sja1105_port_t *port_config, bool cascaded) {
 
     sja1105_status_t status = SJA1105_OK;
 
@@ -57,8 +57,78 @@ sja1105_status_t SJA1105_PortConfigure(sja1105_config_t *config, const sja1105_p
             break;
     }
 
+    /* Assign cascading settings, these are checked later */
+    if (cascaded) {
+        config->ports[port_config->port_num].connected_switch_handle   = port_config->connected_switch_handle;
+        config->ports[port_config->port_num].connected_switch_port_num = port_config->connected_switch_port_num;
+    } else {
+        config->ports[port_config->port_num].connected_switch_handle   = NULL;
+        config->ports[port_config->port_num].connected_switch_port_num = SJA1105_NUM_PORTS;
+    }
     /* Mark the port as configured */
     config->ports[port_config->port_num].configured = true;
+
+    return status;
+}
+
+static sja1105_status_t SJA1106_CheckCascadeSettings(sja1105_handle_t *dev) {
+
+    sja1105_status_t  status = SJA1105_OK;
+    sja1105_handle_t *dev_casc_handle;
+    uint8_t           dev_casc_port;
+
+    /* Basic host and casc check */
+    bool host_1_valid = dev->config->host_port < SJA1105_NUM_PORTS;
+    bool casc_1_valid = dev->config->casc_port < SJA1105_NUM_PORTS;
+    if (host_1_valid && (dev->config->host_port == dev->config->casc_port)) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
+
+    /* Go through each port */
+    for (uint_fast8_t i = 0; i < SJA1105_NUM_PORTS; i++) {
+
+        /* Get cascaded device info */
+        dev_casc_handle = dev->config->ports[i].connected_switch_handle;
+        dev_casc_port   = dev->config->ports[i].connected_switch_port_num;
+
+        /* Check cascaded port points to another switch */
+        if ((dev->config->casc_port == i) && (dev_casc_handle == NULL)) status = SJA1105_PARAMETER_ERROR;
+        if (status != SJA1105_OK) return status;
+
+        /* Skip non-cascading ports and cascaded devices that haven't been configured */
+        if (dev_casc_handle == NULL || !dev_casc_handle->initialised) continue;
+
+        /* Check port config parameters */
+        if (!dev->config->ports[i].configured || !dev_casc_handle->config->ports[dev_casc_port].configured) status = SJA1105_PARAMETER_ERROR; /* A port is unconfigured */
+        if (dev_casc_handle->config->ports[dev_casc_port].connected_switch_handle != dev) status = SJA1105_PARAMETER_ERROR;                   /* Cascaded port doesn't point back to self */
+        if (dev_casc_handle->config->ports[dev_casc_port].connected_switch_port_num != i) status = SJA1105_PARAMETER_ERROR;                   /* Cascaded port doesn't point back to self */
+        if (dev->config->ports[i].interface != dev_casc_handle->config->ports[dev_casc_port].interface) status = SJA1105_PARAMETER_ERROR;     /* Cascaded ports have different interfaces */
+        if (dev->config->ports[i].voltage != dev_casc_handle->config->ports[dev_casc_port].voltage) status = SJA1105_PARAMETER_ERROR;         /* Cascaded ports have different voltages */
+        if (dev->config->ports[i].speed != dev_casc_handle->config->ports[dev_casc_port].speed) status = SJA1105_PARAMETER_ERROR;             /* Cascaded ports have different speeds */
+        /* TODO: Check modes (MAC/PHY) */
+        if (status != SJA1105_OK) return status;
+
+        /* Cascaded and managed */
+        bool host_2_valid = dev_casc_handle->config->host_port < SJA1105_NUM_PORTS;
+        bool casc_2_valid = dev_casc_handle->config->casc_port < SJA1105_NUM_PORTS;
+        if (host_1_valid || host_2_valid || casc_1_valid || casc_2_valid) {
+
+            /* Both switches must set a host */
+            if (!host_1_valid || !host_2_valid) status = SJA1105_PARAMETER_ERROR;
+
+            /* The host port must be on only one device */
+            bool host_on_1 = dev->config->host_port != i;
+            bool host_on_2 = dev_casc_handle->config->host_port != dev_casc_port;
+            if (host_on_1 == host_on_2) status = SJA1105_PARAMETER_ERROR;
+
+            /* The cascade port must point to the downstream device */
+            if (host_on_1 && (dev->config->casc_port != i)) status = SJA1105_PARAMETER_ERROR;
+            if (host_on_2 && (dev_casc_handle->config->casc_port != dev_casc_port)) status = SJA1105_PARAMETER_ERROR;
+
+            /* Both switches must have different IDs. TODO: Verify whole chain has different IDs if >2 switches */
+            if (dev->config->switch_id == dev_casc_handle->config->switch_id) status = SJA1105_PARAMETER_ERROR;
+        }
+        if (status != SJA1105_OK) return status;
+    }
 
     return status;
 }
@@ -89,7 +159,10 @@ sja1105_status_t SJA1105_Init(
     /* Check config parameters */
     if (config->switch_id >= 8) status = SJA1105_PARAMETER_ERROR; /* 3-bit field */
     for (uint_fast8_t i = 0; i < SJA1105_NUM_PORTS; i++) {
-        if (!config->ports[i].configured) status = SJA1105_NOT_CONFIGURED_ERROR;
+        if (!config->ports[i].configured) {
+            SJA1105_LOG("Error, port %u is unconfigured", i);
+            status = SJA1105_NOT_CONFIGURED_ERROR;
+        }
     }
 
     /* Check callbacks */
@@ -140,6 +213,9 @@ sja1105_status_t SJA1105_Init(
 
     /* TODO: Configure SGMII PHY/PCS (optional) */
 
+    /* Check cascading settings */
+    status = SJA1106_CheckCascadeSettings(dev);
+    if (status != SJA1105_OK) goto end;
 
     /* Configure the SJA1105 */
 

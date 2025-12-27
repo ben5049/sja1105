@@ -408,6 +408,8 @@ sja1105_status_t SJA1105_GeneralParamsTableCheck(sja1105_handle_t *dev, const sj
     sja1105_status_t status = SJA1105_OK;
     uint8_t          index;
     uint8_t          host_port;
+    uint8_t          casc_port;
+    uint8_t          id;
 
     /* Check the size is correct */
     if (*table->size != SJA1105_STATIC_CONF_GENERAL_PARAMS_SIZE) status = SJA1105_STATIC_CONF_ERROR;
@@ -418,10 +420,26 @@ sja1105_status_t SJA1105_GeneralParamsTableCheck(sja1105_handle_t *dev, const sj
     if (index >= *table->size) status = SJA1105_PARAMETER_ERROR;
     if (status != SJA1105_OK) return status;
     host_port = (table->data[index] & SJA1105_STATIC_CONF_GENERAL_PARAMS_HOST_PORT_MASK) >> SJA1105_STATIC_CONF_GENERAL_PARAMS_HOST_PORT_SHIFT;
-    if (host_port != dev->config->host_port) status = SJA1105_PARAMETER_ERROR;
+    if (((host_port < SJA1105_NUM_PORTS) || (dev->config->host_port < SJA1105_NUM_PORTS)) &&
+        (host_port != dev->config->host_port)) status = SJA1105_PARAMETER_ERROR;
     if (status != SJA1105_OK) return status;
 
-    /* TODO: Check switch ID */
+    /* Check cascade port is correct */
+    index = SJA1105_STATIC_CONF_GENERAL_PARAMS_CASC_PORT_OFFSET;
+    if (index >= *table->size) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
+    casc_port = (table->data[index] & SJA1105_STATIC_CONF_GENERAL_PARAMS_CASC_PORT_MASK) >> SJA1105_STATIC_CONF_GENERAL_PARAMS_CASC_PORT_SHIFT;
+    if (((casc_port < SJA1105_NUM_PORTS) || (dev->config->casc_port < SJA1105_NUM_PORTS)) &&
+        (casc_port != dev->config->casc_port)) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
+
+    /* Check switch ID is correct */
+    index = SJA1105_STATIC_CONF_GENERAL_PARAMS_SWITCHID_OFFSET;
+    if (index >= *table->size) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
+    id = (table->data[index] & SJA1105_STATIC_CONF_GENERAL_PARAMS_SWITCHID_MASK) >> SJA1105_STATIC_CONF_GENERAL_PARAMS_SWITCHID_SHIFT;
+    if (id != dev->config->switch_id) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
 
     return status;
 }
