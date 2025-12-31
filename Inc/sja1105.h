@@ -27,6 +27,8 @@ extern "C" {
 #error "MAC_ADDR_SIZE must be 6 bytes long"
 #endif
 
+
+/* General */
 #define SJA1105_NUM_PORTS             (5)
 #define SJA1105_NUM_TABLES            (25)
 #define SJA1105_FIXED_BUFFER_SIZE     (274) /* Size of the fixed length table buffer */
@@ -34,6 +36,16 @@ extern "C" {
 #define SJA1105_MAX_ATTEMPTS          (10)  /* Maximum number of attempts to try anything. E.g. polling a flag with timeout = 100ms will result in 10 reads 10ms apart. Must be > 0 */
 #define SJA1105_L2ADDR_LU_ENTRY_SIZE  (5)
 #define SJA1105_L2ADDR_LU_NUM_ENTRIES (1024)
+
+/* Timings */
+#define SJA1105_T_RST            (5000)   /* Reset pin pulse width 5000ns (5us) */
+#define SJA1105_T_RST_STARTUP_HW (329000) /* 329000ns (329us) */
+#define SJA1105_T_RST_STARTUP_SW (2000)   /* 2000ns (2us) */
+#define SJA1105_T_SPI_WR         (130)    /* ns */
+#define SJA1105_T_SPI_CTRL_DATA  (64)     /* Time between writing the command frame and reading data in ns */
+#define SJA1105_T_SPI_LEAD       (40)     /* ns */
+#define SJA1105_T_SPI_LAG        (40)     /* ns */
+
 
 #ifndef SJA1105_PORTS_START_ENABLED
 #define SJA1105_PORTS_START_ENABLED true /* Override to "false" to disable port ingress, egress and learning at startup */

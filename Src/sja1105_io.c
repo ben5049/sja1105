@@ -344,6 +344,8 @@ sja1105_status_t SJA1105_WarmReset(sja1105_handle_t *dev) {
 
     /* Delay to wait for startup */
     SJA1105_DELAY_NS(SJA1105_T_RST_STARTUP_SW);
+
+    return status;
 }
 
 
