@@ -30,17 +30,16 @@ extern "C" {
 #define SJA1105_SPI_SIZE_POSITION       (25)         /* occupies bits[30:25] */
 
 /* Timings */
-#define SJA1105_T_RST                (5000)   /* Reset pin pulse width 5000ns (5us) */
-#define SJA1105_T_RST_STARTUP_HW     (329000) /* 329000ns (329us) */
-#define SJA1105_T_RST_STARTUP_SW     (2000)   /* 2000ns (2us) */
-#define SJA1105_T_SPI_WR             (130)    /* ns */
-#define SJA1105_T_SPI_CTRL_DATA      (64)     /* Time between writing the command frame and reading data in ns */
-#define SJA1105_T_SPI_LEAD           (40)     /* ns */
-#define SJA1105_T_SPI_LAG            (40)     /* ns */
+#define SJA1105_T_RST               (5000)   /* Reset pin pulse width 5000ns (5us) */
+#define SJA1105_T_RST_STARTUP_HW    (329000) /* 329000ns (329us) */
+#define SJA1105_T_RST_STARTUP_SW    (2000)   /* 2000ns (2us) */
+#define SJA1105_T_SPI_WR            (130)    /* ns */
+#define SJA1105_T_SPI_CTRL_DATA     (64)     /* Time between writing the command frame and reading data in ns */
+#define SJA1105_T_SPI_LEAD          (40)     /* ns */
+#define SJA1105_T_SPI_LAG           (40)     /* ns */
 
 
-#define SJA1105_WRITE_RST_PIN(state) dev->callbacks->callback_write_rst_pin((state), dev->callback_context)
-#define SJA1105_WRITE_CS_PIN(state)  dev->callbacks->callback_write_cs_pin((state), dev->callback_context)
+#define SJA1105_WRITE_CS_PIN(state) dev->callbacks->callback_write_cs_pin((state), dev->callback_context)
 
 #define SJA1105_SPI_TRANSMIT(data, size)                                                                               \
     ({                                                                                                                 \
@@ -115,7 +114,7 @@ sja1105_status_t SJA1105_WriteTable(sja1105_handle_t *dev, uint32_t addr, sja110
 
 sja1105_status_t SJA1105_L2LUTInvalidateRange(sja1105_handle_t *dev, uint16_t low_i, uint16_t high_i);
 
-void             SJA1105_FullReset(sja1105_handle_t *dev);
+sja1105_status_t SJA1105_WarmReset(sja1105_handle_t *dev);
 sja1105_status_t SJA1105_CfgReset(sja1105_handle_t *dev);
 
 

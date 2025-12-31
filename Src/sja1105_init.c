@@ -166,7 +166,6 @@ sja1105_status_t SJA1105_Init(
     }
 
     /* Check callbacks */
-    if (callbacks->callback_write_rst_pin == NULL) status = SJA1105_PARAMETER_ERROR;
     if (callbacks->callback_write_cs_pin == NULL) status = SJA1105_PARAMETER_ERROR;
     if (callbacks->callback_spi_transmit == NULL) status = SJA1105_PARAMETER_ERROR;
     if (callbacks->callback_spi_receive == NULL) status = SJA1105_PARAMETER_ERROR;
@@ -200,7 +199,6 @@ sja1105_status_t SJA1105_Init(
     SJA1105_ResetManagementRoutes(dev);
 
     /* Set pins to a known state */
-    SJA1105_WRITE_RST_PIN(SJA1105_PIN_SET);
     SJA1105_WRITE_CS_PIN(SJA1105_PIN_SET);
 
     /* Clear all previously allocated memory (usually just re-inits the byte pool) */
@@ -220,7 +218,8 @@ sja1105_status_t SJA1105_Init(
     /* Configure the SJA1105 */
 
     /* Reset */
-    SJA1105_FullReset(dev);
+    status = SJA1105_WarmReset(dev);
+    if (status != SJA1105_OK) goto end;
 
     /* Check the part number matches the specified variant */
     status = SJA1105_CheckPartID(dev);

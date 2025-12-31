@@ -331,14 +331,19 @@ end:
 }
 
 
-void SJA1105_FullReset(sja1105_handle_t *dev) {
-    SJA1105_WRITE_RST_PIN(SJA1105_PIN_RESET);
-    SJA1105_DELAY_NS(SJA1105_T_RST); /* 5us delay */
-    SJA1105_WRITE_RST_PIN(SJA1105_PIN_SET);
-    SJA1105_DELAY_MS(1);             /* 329us minimum until SPI commands can be written (SJA1105_T_RST_STARTUP_HW). Use a 1ms non-blocking delay so the RTOS can do other work */
+sja1105_status_t SJA1105_WarmReset(sja1105_handle_t *dev) {
+
+    sja1105_status_t status   = SJA1105_OK;
+    uint32_t         reg_data = SJA1105_RGU_WARM_RST;
+
+    status = SJA1105_WriteRegister(dev, SJA1105_RGU_REG_RESET_CTRL, &reg_data, 1);
+    if (status != SJA1105_OK) return status;
 
     /* Increment the internal reset counter */
     dev->events.resets++;
+
+    /* Delay to wait for startup */
+    SJA1105_DELAY_NS(SJA1105_T_RST_STARTUP_SW);
 }
 
 

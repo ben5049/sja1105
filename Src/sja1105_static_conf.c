@@ -348,7 +348,7 @@ sja1105_status_t SJA1105_LoadStaticConfig(sja1105_handle_t *dev, const uint32_t 
 sja1105_status_t SJA1105_WriteStaticConfig(sja1105_handle_t *dev, bool safe) {
 
     /* TODO: Fix unsafe mode, currently the device rejects the config when written in unsafe mode */
-    assert(safe);
+    if (!safe) return SJA1105_NOT_IMPLEMENTED_ERROR;
 
     sja1105_status_t status                                         = SJA1105_OK;
     sja1105_table_t *table                                          = NULL;
@@ -515,9 +515,8 @@ sja1105_status_t SJA1105_SyncStaticConfig(sja1105_handle_t *dev) {
 
     /* Purge all configuration data on the chip */
     status = SJA1105_CfgReset(dev);
-    if (status != SJA1105_OK) {
-        SJA1105_FullReset(dev);
-    }
+    if (status != SJA1105_OK) status = SJA1105_WarmReset(dev);
+    if (status != SJA1105_OK) return status;
 
     /* Write the configuration and try again in safe mode if it fails */
     status = SJA1105_WriteStaticConfig(dev, true); /* TODO: Change to false when unsafe mode is fixed */

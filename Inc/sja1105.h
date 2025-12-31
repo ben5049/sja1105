@@ -235,7 +235,6 @@ typedef struct {
     void    *contexts[SJA1105_NUM_MGMT_SLOTS];   /* Context set by SJA1105_ManagementRouteCreate() caller so they can tell if their entry has been evicted. */
 } sja1105_mgmt_routes_t;
 
-typedef void (*sja1105_callback_write_rst_pin_t)(sja1105_pinstate_t state, void *context);
 typedef void (*sja1105_callback_write_cs_pin_t)(sja1105_pinstate_t state, void *context);
 typedef sja1105_status_t (*sja1105_callback_spi_transmit_t)(const uint32_t *data, uint16_t size, uint32_t timeout, void *context);
 typedef sja1105_status_t (*sja1105_callback_spi_receive_t)(uint32_t *data, uint16_t size, uint32_t timeout, void *context);
@@ -253,7 +252,6 @@ typedef sja1105_status_t (*sja1105_callback_crc_accumulate_t)(const uint32_t *bu
 typedef void (*sja1105_callback_write_log_t)(const char *format, ...);
 
 typedef struct {
-    sja1105_callback_write_rst_pin_t        callback_write_rst_pin;        /* Write change the state of the reset pin */
     sja1105_callback_write_cs_pin_t         callback_write_cs_pin;         /* Write change the state of the chip select (CS) pin */
     sja1105_callback_spi_transmit_t         callback_spi_transmit;         /* Write data via SPI */
     sja1105_callback_spi_receive_t          callback_spi_receive;          /* Read data via SPI */
