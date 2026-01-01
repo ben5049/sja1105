@@ -17,10 +17,12 @@ sja1105_status_t __SJA1105_ReadRegister(sja1105_handle_t *dev, uint32_t addr, ui
     static const uint32_t dummy_payload = 0xcccc5555; /* When size = 1 and integrity_check = true, send this payload as we are reading data to confirm everything is working. */
 
     /* Check the parameters */
+#if SJA1105_CHECKS_ENABLED
     if (size == 0) status = SJA1105_PARAMETER_ERROR;                                  /* Empty check */
     if (addr & ~SJA1105_SPI_ADDR_MASK) status = SJA1105_PARAMETER_ERROR;              /* Start address check */
     if ((addr + size - 1) & ~SJA1105_SPI_ADDR_MASK) status = SJA1105_PARAMETER_ERROR; /* End address check */
     if (status != SJA1105_OK) return status;
+#endif
 
     /* Initialise counter for the number of double words remaining to receive */
     uint32_t dwords_remaining = size;
@@ -137,10 +139,12 @@ sja1105_status_t SJA1105_WriteRegister(sja1105_handle_t *dev, uint32_t addr, con
     sja1105_status_t status = SJA1105_OK;
 
     /* Check the parameters */
+#if SJA1105_CHECKS_ENABLED
     if (size == 0) status = SJA1105_PARAMETER_ERROR;                                  /* Empty check */
     if (addr & ~SJA1105_SPI_ADDR_MASK) status = SJA1105_PARAMETER_ERROR;              /* Start address check */
     if ((addr + size - 1) & ~SJA1105_SPI_ADDR_MASK) status = SJA1105_PARAMETER_ERROR; /* End address check */
     if (status != SJA1105_OK) return status;
+#endif
 
     /* Initialise counter for the number of double words remaining to transmit */
     uint32_t dwords_remaining = size;
@@ -195,10 +199,12 @@ sja1105_status_t SJA1105_WriteTable(sja1105_handle_t *dev, uint32_t addr, sja110
     uint32_t         reg_data      = 0;
 
     /* Check the parameters */
+#if SJA1105_CHECKS_ENABLED
     if (!table->data_crc_valid) status = SJA1105_CRC_ERROR;                           /* CRC must be pre-computed */
     if (addr & ~SJA1105_SPI_ADDR_MASK) status = SJA1105_PARAMETER_ERROR;              /* Start address check */
     if ((addr + size - 1) & ~SJA1105_SPI_ADDR_MASK) status = SJA1105_PARAMETER_ERROR; /* End address check */
     if (status != SJA1105_OK) return status;
+#endif
 
     /* Create the command frame */
     command_frame  = SJA1105_SPI_WRITE_FRAME;
@@ -284,9 +290,11 @@ sja1105_status_t SJA1105_L2LUTInvalidateRange(sja1105_handle_t *dev, uint16_t lo
     sja1105_status_t status = SJA1105_OK;
 
     /* Argument checking */
+#if SJA1105_CHECKS_ENABLED
     if (low_i > high_i) status = SJA1105_PARAMETER_ERROR;
     if (high_i >= SJA1105_L2ADDR_LU_NUM_ENTRIES) status = SJA1105_PARAMETER_ERROR;
     if (status != SJA1105_OK) goto end;
+#endif
 
     /* Initialise the empty register data array: 1 command word + 5 entry words + 1 write entry command */
     static const uint8_t size                                           = 1 + SJA1105_L2ADDR_LU_ENTRY_SIZE + 1;

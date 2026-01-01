@@ -175,7 +175,11 @@ sja1105_status_t SJA1105_ConfigureACUPort(sja1105_handle_t *dev, uint8_t port_nu
      *       CLK delays are needed. Many PHYs also implement this and it is only needed once per TX or RX
      *       channel. Since the SJA1105's ID implementation uses phase (not time) delays and requires
      *       managing frequency transitions, the PHY implementation is usually preferred.
+     *
+     * TODO: For MAC to MAC connections it is required
      */
+
+    if (port->rgmii_id_mode != SJA1105_RGMII_ID_NONE) status = SJA1105_NOT_IMPLEMENTED_ERROR;
 
     return status;
 }

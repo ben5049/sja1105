@@ -20,16 +20,19 @@ sja1105_status_t SJA1105_PortConfigure(sja1105_config_t *config, const sja1105_p
     sja1105_status_t status = SJA1105_OK;
 
     /* Check the parameters */
+#if SJA1105_CHECKS_ENABLED
     if (port_config->port_num >= SJA1105_NUM_PORTS) status = SJA1105_PARAMETER_ERROR;
     if (port_config->interface >= SJA1105_INTERFACE_INVALID) status = SJA1105_PARAMETER_ERROR;
     if (port_config->mode >= SJA1105_MODE_INVALID) status = SJA1105_PARAMETER_ERROR;
     if (port_config->speed >= SJA1105_SPEED_INVALID) status = SJA1105_PARAMETER_ERROR;
     if (port_config->voltage >= SJA1105_IO_V_INVALID) status = SJA1105_PARAMETER_ERROR;
-    if ((port_config->interface == SJA1105_INTERFACE_MII) && (port_config->speed == SJA1105_SPEED_1G)) status = SJA1105_PARAMETER_ERROR;  /* MII Interface doesn't support 1G speeds */
-    if ((port_config->interface == SJA1105_INTERFACE_RMII) && (port_config->speed == SJA1105_SPEED_1G)) status = SJA1105_PARAMETER_ERROR; /* RMII Interface doesn't support 1G speeds */
-    if ((port_config->voltage == SJA1105_IO_1V8) && (port_config->interface == SJA1105_INTERFACE_RMII)) status = SJA1105_PARAMETER_ERROR; /* 1V8 RMII not supported */
-    if (config->ports[port_config->port_num].configured == true) status = SJA1105_ALREADY_CONFIGURED_ERROR;                               /* Note this may cause an unintended error if the struct uses non-zeroed memory. */
+    if ((port_config->interface == SJA1105_INTERFACE_RGMII) && (port_config->rgmii_id_mode >= SJA1105_RGMII_ID_INVALID)) status = SJA1105_PARAMETER_ERROR; /* If RGMII selected then the delay must be valid */
+    if ((port_config->interface == SJA1105_INTERFACE_MII) && (port_config->speed == SJA1105_SPEED_1G)) status = SJA1105_PARAMETER_ERROR;                   /* MII Interface doesn't support 1G speeds */
+    if ((port_config->interface == SJA1105_INTERFACE_RMII) && (port_config->speed == SJA1105_SPEED_1G)) status = SJA1105_PARAMETER_ERROR;                  /* RMII Interface doesn't support 1G speeds */
+    if ((port_config->voltage == SJA1105_IO_1V8) && (port_config->interface == SJA1105_INTERFACE_RMII)) status = SJA1105_PARAMETER_ERROR;                  /* 1V8 RMII not supported */
+    if (config->ports[port_config->port_num].configured == true) status = SJA1105_ALREADY_CONFIGURED_ERROR;                                                /* Note this may cause an unintended error if the struct uses non-zeroed memory. */
     if (status != SJA1105_OK) return status;
+#endif
 
     /* Assign the generic parameters */
     config->ports[port_config->port_num].port_num  = port_config->port_num;
@@ -44,16 +47,25 @@ sja1105_status_t SJA1105_PortConfigure(sja1105_config_t *config, const sja1105_p
         case SJA1105_INTERFACE_MII:
             config->ports[port_config->port_num].output_rmii_refclk = false;
             config->ports[port_config->port_num].rx_error_unused    = port_config->rx_error_unused;
+            config->ports[port_config->port_num].rgmii_id_mode      = SJA1105_RGMII_ID_NONE;
             break;
 
         case SJA1105_INTERFACE_RMII:
             config->ports[port_config->port_num].output_rmii_refclk = port_config->output_rmii_refclk;
             config->ports[port_config->port_num].rx_error_unused    = port_config->rx_error_unused;
+            config->ports[port_config->port_num].rgmii_id_mode      = SJA1105_RGMII_ID_NONE;
+            break;
+
+        case SJA1105_INTERFACE_RGMII:
+            config->ports[port_config->port_num].output_rmii_refclk = false;
+            config->ports[port_config->port_num].rx_error_unused    = false;
+            config->ports[port_config->port_num].rgmii_id_mode      = port_config->rgmii_id_mode;
             break;
 
         default:
             config->ports[port_config->port_num].output_rmii_refclk = false;
             config->ports[port_config->port_num].rx_error_unused    = false;
+            config->ports[port_config->port_num].rgmii_id_mode      = SJA1105_RGMII_ID_NONE;
             break;
     }
 
@@ -156,14 +168,17 @@ sja1105_status_t SJA1105_Init(
     if (config->variant != VARIANT_SJA1105Q) status = SJA1105_NOT_IMPLEMENTED_ERROR;
     if (status != SJA1105_OK) return status;
 
+#if SJA1105_CHECKS_ENABLED
+
     /* Check config parameters */
-    if (config->switch_id >= 8) status = SJA1105_PARAMETER_ERROR; /* 3-bit field */
+    if (config->switch_id > 7) status = SJA1105_PARAMETER_ERROR; /* 3-bit field */
     for (uint_fast8_t i = 0; i < SJA1105_NUM_PORTS; i++) {
         if (!config->ports[i].configured) {
             SJA1105_LOG("Error, port %u is unconfigured", i);
             status = SJA1105_NOT_CONFIGURED_ERROR;
         }
     }
+    if (status != SJA1105_OK) goto end;
 
     /* Check callbacks */
     if (callbacks->callback_write_cs_pin == NULL) status = SJA1105_PARAMETER_ERROR;
@@ -180,9 +195,9 @@ sja1105_status_t SJA1105_Init(
     if (callbacks->callback_free_all == NULL) status = SJA1105_PARAMETER_ERROR;
     if (callbacks->callback_crc_reset == NULL) status = SJA1105_PARAMETER_ERROR;
     if (callbacks->callback_crc_accumulate == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) goto end; /* If there are invalid parameters then return */
 
-    /* If there are invalid parameters then return */
-    if (status != SJA1105_OK) goto end;
+#endif
 
     /* Assign the input arguments */
     dev->config           = config;

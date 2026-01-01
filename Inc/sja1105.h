@@ -57,8 +57,14 @@ extern "C" {
 #define UNUSED(x) ((void) (x))
 #endif
 
+/* Enable and disable log statements */
 #ifndef SJA1105_LOGGING_ENABLED
 #define SJA1105_LOGGING_ENABLED (1)
+#endif
+
+/* Enable and disable argument checking in functions */
+#ifndef SJA1105_CHECKS_ENABLED
+#define SJA1105_CHECKS_ENABLED (1)
 #endif
 
 
@@ -136,17 +142,26 @@ typedef enum {
     SJA1105_IO_V_INVALID           = 0x4 /* Dummmy value for argument checking */
 } sja1105_io_voltage_t;
 
+typedef enum {
+    SJA1105_RGMII_ID_NONE      = 0x0,
+    SJA1105_RGMII_ID_TX_1NS    = 0x1,
+    SJA1105_RGMII_ID_RX_1NS    = 0x2,
+    SJA1105_RGMII_ID_TX_RX_1NS = 0x3,
+    SJA1105_RGMII_ID_INVALID   = 0x4 /* Dummmy value for argument checking */
+} sja1105_rgmii_delay_mode_t;
+
 typedef struct {
-    uint8_t              port_num;
-    sja1105_speed_t      speed;
-    sja1105_interface_t  interface;
-    sja1105_mode_t       mode;
-    sja1105_io_voltage_t voltage;
-    bool                 output_rmii_refclk;        /* Only used when interface = SJA1105_INTERFACE_RMII and mode = SJA1105_MODE_PHY */
-    bool                 rx_error_unused;           /* Only used when interface is MII or RMII. Controls whether or not the RX_ERR input is pulled down */
-    sja1105_handle_t    *connected_switch_handle;   /* For cascaded SJA1105s. Pointer to switch connected on this port */
-    uint8_t              connected_switch_port_num; /* For cascaded SJA1105s. Port number of switch connected on this port */
-    bool                 configured;
+    uint8_t                    port_num;
+    sja1105_speed_t            speed;
+    sja1105_interface_t        interface;
+    sja1105_mode_t             mode;
+    sja1105_io_voltage_t       voltage;
+    sja1105_rgmii_delay_mode_t rgmii_id_mode;             /* Internal delays on RGMII TX/RX clocks */
+    bool                       output_rmii_refclk;        /* Only used when interface = SJA1105_INTERFACE_RMII and mode = SJA1105_MODE_PHY */
+    bool                       rx_error_unused;           /* Only used when interface is MII or RMII. Controls whether or not the RX_ERR input is pulled down */
+    sja1105_handle_t          *connected_switch_handle;   /* For cascaded SJA1105s. Pointer to switch connected on this port */
+    uint8_t                    connected_switch_port_num; /* For cascaded SJA1105s. Port number of switch connected on this port */
+    bool                       configured;
 } sja1105_port_t;
 
 typedef struct {
