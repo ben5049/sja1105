@@ -334,7 +334,7 @@ sja1105_status_t SJA1105_MACConfTableWrite(sja1105_handle_t *dev, uint8_t port_n
     if (status != SJA1105_OK) return status;
 
     /* Parameter and bounds checking */
-    _Static_assert(SJA1105_STATIC_CONF_MAC_CONF_ENTRY_SIZE == (SJA1105_DYN_CONF_MAC_CONF_REG_8 - SJA1105_DYN_CONF_MAC_CONF_REG_1 + 1));
+    static_assert(SJA1105_STATIC_CONF_MAC_CONF_ENTRY_SIZE == (SJA1105_DYN_CONF_MAC_CONF_REG_8 - SJA1105_DYN_CONF_MAC_CONF_REG_1 + 1));
     if ((index + SJA1105_STATIC_CONF_MAC_CONF_ENTRY_SIZE) > *dev->tables.mac_configuration.size) status = SJA1105_PARAMETER_ERROR;
     if (status != SJA1105_OK) return status;
 
@@ -379,7 +379,7 @@ sja1105_status_t SJA1105_MACConfTableRead(sja1105_handle_t *dev, uint8_t port_nu
     if (status != SJA1105_OK) return status;
 
     /* Parameter and bounds checking */
-    _Static_assert(SJA1105_STATIC_CONF_MAC_CONF_ENTRY_SIZE == (SJA1105_DYN_CONF_MAC_CONF_REG_8 - SJA1105_DYN_CONF_MAC_CONF_REG_1 + 1));
+    static_assert(SJA1105_STATIC_CONF_MAC_CONF_ENTRY_SIZE == (SJA1105_DYN_CONF_MAC_CONF_REG_8 - SJA1105_DYN_CONF_MAC_CONF_REG_1 + 1));
     if ((index + SJA1105_STATIC_CONF_MAC_CONF_ENTRY_SIZE) > *dev->tables.mac_configuration.size) status = SJA1105_PARAMETER_ERROR;
     if (status != SJA1105_OK) return status;
 
@@ -555,7 +555,7 @@ sja1105_status_t SJA1105_L2ForwardingTableRead(sja1105_handle_t *dev, uint8_t in
     if (status != SJA1105_OK) return status;
 
     /* Parameter checking */
-    _Static_assert(SJA1105_STATIC_CONF_L2_FORWARDING_ENTRY_SIZE == (SJA1105_DYN_CONF_L2_FORWARDING_REG_2 - SJA1105_DYN_CONF_L2_FORWARDING_REG_1 + 1));
+    static_assert(SJA1105_STATIC_CONF_L2_FORWARDING_ENTRY_SIZE == (SJA1105_DYN_CONF_L2_FORWARDING_REG_2 - SJA1105_DYN_CONF_L2_FORWARDING_REG_1 + 1));
     if (index >= SJA1105_STATIC_CONF_L2_FORWARDING_NUM_ENTRIES) status = SJA1105_PARAMETER_ERROR;
     if (offset >= SJA1105_STATIC_CONF_L2_FORWARDING_ENTRY_SIZE * SJA1105_STATIC_CONF_L2_FORWARDING_NUM_ENTRIES) status = SJA1105_PARAMETER_ERROR;
     if (status != SJA1105_OK) return status;
