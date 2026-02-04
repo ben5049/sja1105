@@ -150,7 +150,9 @@ sja1105_status_t SJA1105_ConfigureCGUPort(sja1105_handle_t *dev, uint8_t port_nu
     status = SJA1105_PortGetSpeed(dev, port_num, &speed);
     if (status != SJA1105_OK) return status;
 
-    /* Skip clock setup for dynamic ports, they must be configured separately with SJA1105_PortSetSpeed() */
+    /* Skip clock setup for dynamic ports, they must be configured separately with SJA1105_PortSetSpeed()
+     * Note: SJA1105_PortSetSpeed() does call this function, but it calls SJA1105_PortGetSpeed() first
+     *       which updates the MAC config table and means speed != SJA1105_SPEED_DYNAMIC. */
     if (speed == SJA1105_SPEED_DYNAMIC) return status;
 
     switch (port->interface) {

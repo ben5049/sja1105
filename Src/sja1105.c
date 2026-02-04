@@ -95,25 +95,53 @@ sja1105_status_t __SJA1105_PortSetSpeed(sja1105_handle_t *dev, uint8_t port_num,
         status = SJA1105_MACConfTableSetSpeed(&dev->tables.mac_configuration, port_num, new_speed);
         if (status != SJA1105_OK) goto end;
 
-        /* Write the internal MAC Configuration table to the device */
+        /* Write the internal MAC Configuration table to the device. This sets the speed */
         status = SJA1105_MACConfTableWrite(dev, port_num);
         if (status != SJA1105_OK) {
             revert = true;
             goto end;
         }
 
-        /* Configure the ACU with new options */
-        status = SJA1105_ConfigureACUPort(dev, port_num, true);
-        if (status != SJA1105_OK) {
-            revert = true;
-            goto end;
-        }
+        /* When an internal delay is enabled, the delay lines must be disabled temporarily while the frequency is changed */
+        if (dev->config->ports[port_num].rgmii_id_mode != SJA1105_RGMII_ID_NONE) {
 
-        /* Configure the CGU with new options */
-        status = SJA1105_ConfigureCGUPort(dev, port_num, true);
-        if (status != SJA1105_OK) {
-            revert = true;
-            goto end;
+            /* Disable the TDLs */
+            status = SJA1105_ConfigureTDL(dev, port_num, SJA1105_ID_NONE, SJA1105_ID_NONE, true);
+            if (status != SJA1105_OK) {
+                revert = true;
+                goto end;
+            }
+
+            /* Configure the CGU with new options */
+            status = SJA1105_ConfigureCGUPort(dev, port_num, true);
+            if (status != SJA1105_OK) {
+                revert = true;
+                goto end;
+            }
+
+            /* Configure the ACU with new options (after waiting for the TDL to settle) */
+            SJA1105_DELAY_NS(SJA1105_T_TDL_CHANGE);
+            status = SJA1105_ConfigureACUPort(dev, port_num, true);
+            if (status != SJA1105_OK) {
+                revert = true;
+                goto end;
+            }
+
+        } else {
+
+            /* Configure the ACU with new options */
+            status = SJA1105_ConfigureACUPort(dev, port_num, true);
+            if (status != SJA1105_OK) {
+                revert = true;
+                goto end;
+            }
+
+            /* Configure the CGU with new options */
+            status = SJA1105_ConfigureCGUPort(dev, port_num, true);
+            if (status != SJA1105_OK) {
+                revert = true;
+                goto end;
+            }
         }
     }
 

@@ -25,6 +25,7 @@ sja1105_status_t SJA1105_CheckDeviceID(sja1105_handle_t *dev, uint32_t device_id
 
 sja1105_status_t SJA1105_ConfigureACU(sja1105_handle_t *dev, bool write);
 sja1105_status_t SJA1105_ConfigureACUPort(sja1105_handle_t *dev, uint8_t port_num, bool write);
+sja1105_status_t SJA1105_ConfigureTDL(sja1105_handle_t *dev, uint8_t port_num, uint8_t tx_delay, uint8_t rx_delay, bool write);
 
 sja1105_status_t SJA1105_ConfigureCGU(sja1105_handle_t *dev, bool write);
 sja1105_status_t SJA1105_ConfigureCGUPort(sja1105_handle_t *dev, uint8_t port_num, bool write);

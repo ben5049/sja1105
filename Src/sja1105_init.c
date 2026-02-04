@@ -174,7 +174,7 @@ sja1105_status_t SJA1105_Init(
     if (config->switch_id > 7) status = SJA1105_PARAMETER_ERROR; /* 3-bit field */
     for (uint_fast8_t i = 0; i < SJA1105_NUM_PORTS; i++) {
         if (!config->ports[i].configured) {
-            SJA1105_LOG("Error, port %u is unconfigured", i);
+            SJA1105_LOG("Port %u is unconfigured", i);
             status = SJA1105_NOT_CONFIGURED_ERROR;
         }
     }

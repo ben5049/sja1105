@@ -102,6 +102,7 @@ enum SJA1105_DeviceID_Enum {
 
 #define SJA1105_ACU_TABLE_PAD_MIIX_RX_INDEX(port_num) (11 + (2 * (SJA1105_NUM_PORTS - 1 - (port_num))))
 #define SJA1105_ACU_TABLE_PAD_MIIX_TX_INDEX(port_num) (12 + (2 * (SJA1105_NUM_PORTS - 1 - (port_num))))
+#define SJA1105_ACU_TABLE_PAD_MIIX_ID_INDEX(port_num) (10 - (port_num))
 
 enum SJA1105_ACUReg_Enum {
     SJA1105_ACU_REG_CFG_PAD_MIIX_BASE = 0x100800,
@@ -186,6 +187,23 @@ enum SJA1105_ACUReg_Enum {
 
 #define SJA1105_IH_SCHMITT                         (SJA1105_CLK_IH_SCHMITT | SJA1105_CTRL_IH_SCHMITT | SJA1105_D10_IH_SCHMITT | SJA1105_D32_IH_SCHMITT)
 #define SJA1105_IH_NON_SCHMITT                     (SJA1105_CLK_IH_NON_SCHMITT | SJA1105_CTRL_IH_NON_SCHMITT | SJA1105_D10_IH_NON_SCHMITT | SJA1105_D32_IH_NON_SCHMITT)
+
+#define SJA1105_TXC_PD                             (1 << 0)
+#define SJA1105_TXC_BYPASS                         (1 << 1)
+#define SJA1105_TXC_DELAY_SHIFT                    (2)
+#define SJA1105_TXC_DELAY_MASK                     (0x1f << SJA1105_TXC_DELAY_SHIFT)
+#define SJA1105_TXC_STABLE_OVR                     (1 << 7)
+
+#define SJA1105_RXC_PD                             (1 << 8)
+#define SJA1105_RXC_BYPASS                         (1 << 9)
+#define SJA1105_RXC_DELAY_SHIFT                    (10)
+#define SJA1105_RXC_DELAY_MASK                     (0x1f << SJA1105_RXC_DELAY_SHIFT)
+#define SJA1105_RXC_STABLE_OVR                     (1 << 15)
+
+#define SJA1105_ID_MIN                             (3)
+#define SJA1105_ID_1NS                             (8)  /* 81 degrees (actually 1.8ns at 125MHz) */
+#define SJA1105_ID_MAX                             (25)
+#define SJA1105_ID_NONE                            (32) /* Delay is a 5-bit field so this is invalid and is caught */
 
 #define SJA1105_PART_NR_OFFSET                     (4)
 #define SJA1105_PART_NR_MASK                       (0xffff << SJA1105_PART_NR_OFFSET)
@@ -401,7 +419,7 @@ typedef enum {
 #define SJA1105_STATIC_CONF_GENERAL_PARAMS_CASC_PORT_MASK       (0x7 << SJA1105_STATIC_CONF_GENERAL_PARAMS_CASC_PORT_SHIFT)
 
 #define SJA1105_STATIC_CONF_GENERAL_PARAMS_SWITCHID_OFFSET      (10) /* [349:347] therefore in the 11th word */
-#define SJA1105_STATIC_CONF_GENERAL_PARAMS_SWITCHID_SHIFT       (24) /* shifted up by 24 */
+#define SJA1105_STATIC_CONF_GENERAL_PARAMS_SWITCHID_SHIFT       (27) /* shifted up by 27 */
 #define SJA1105_STATIC_CONF_GENERAL_PARAMS_SWITCHID_MASK        (0x7 << SJA1105_STATIC_CONF_GENERAL_PARAMS_SWITCHID_SHIFT)
 
 #define SJA1105_STATIC_CONF_XMII_MODE_SIZE                      (1)

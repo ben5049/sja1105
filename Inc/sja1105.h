@@ -45,6 +45,7 @@ extern "C" {
 #define SJA1105_T_SPI_CTRL_DATA  (64)     /* Time between writing the command frame and reading data in ns */
 #define SJA1105_T_SPI_LEAD       (40)     /* ns */
 #define SJA1105_T_SPI_LAG        (40)     /* ns */
+#define SJA1105_T_TDL_CHANGE     (2000)   /* 2000ns (2us) */
 
 
 #ifndef SJA1105_PORTS_START_ENABLED

@@ -171,15 +171,63 @@ sja1105_status_t SJA1105_ConfigureACUPort(sja1105_handle_t *dev, uint8_t port_nu
         dev->tables.acu_config_parameters.data_crc_valid                                      = false;
     }
 
-    /* TODO: Update the internal delay (ID) register (SJA1105_ACU_REG_CFG_PAD_MIIX_ID) if internal RGMII
-     *       CLK delays are needed. Many PHYs also implement this and it is only needed once per TX or RX
-     *       channel. Since the SJA1105's ID implementation uses phase (not time) delays and requires
-     *       managing frequency transitions, the PHY implementation is usually preferred.
-     *
-     * TODO: For MAC to MAC connections it is required
-     */
+    /* Configure the tuneable delay lines */
+    uint8_t tx_delay = ((port->rgmii_id_mode == SJA1105_RGMII_ID_TX_1NS) || (port->rgmii_id_mode == SJA1105_RGMII_ID_TX_RX_1NS)) ? SJA1105_ID_1NS : SJA1105_ID_NONE;
+    uint8_t rx_delay = ((port->rgmii_id_mode == SJA1105_RGMII_ID_RX_1NS) || (port->rgmii_id_mode == SJA1105_RGMII_ID_TX_RX_1NS)) ? SJA1105_ID_1NS : SJA1105_ID_NONE;
+    status           = SJA1105_ConfigureTDL(dev, port_num, tx_delay, rx_delay, write);
+    if (status != SJA1105_OK) return status;
 
-    if (port->rgmii_id_mode != SJA1105_RGMII_ID_NONE) status = SJA1105_NOT_IMPLEMENTED_ERROR;
+    return status;
+}
+
+
+/* Update the internal delay (ID) register (SJA1105_ACU_REG_CFG_PAD_MIIX_ID) if internal RGMII
+ * CLK delays are needed. Many PHYs also implement this and it is only needed once per TX or RX
+ * channel. Since the SJA1105's ID implementation uses phase (not time) delays and requires
+ * managing frequency transitions, the PHY implementation is usually preferred.
+ *
+ * For RGMII MAC to MAC connections it is required
+ */
+sja1105_status_t SJA1105_ConfigureTDL(sja1105_handle_t *dev, uint8_t port_num, uint8_t tx_delay, uint8_t rx_delay, bool write) {
+
+    sja1105_status_t status = SJA1105_OK;
+    uint32_t         reg_data;
+
+    /* Check the ID mode is valid */
+    if (tx_delay > SJA1105_ID_NONE) status = SJA1105_PARAMETER_ERROR;
+    if (rx_delay > SJA1105_ID_NONE) status = SJA1105_PARAMETER_ERROR;
+    if ((tx_delay != SJA1105_ID_NONE) && ((tx_delay < SJA1105_ID_MIN) || (tx_delay > SJA1105_ID_MAX))) status = SJA1105_PARAMETER_ERROR;
+    if ((rx_delay != SJA1105_ID_NONE) && ((rx_delay < SJA1105_ID_MIN) || (rx_delay > SJA1105_ID_MAX))) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
+
+    /* Reset ID config */
+    reg_data = SJA1105_ACU_INITIAL_CFG_PAD_MIIX_ID;
+
+    /* Set the TX delay */
+    if (tx_delay != SJA1105_ID_NONE) {
+        reg_data &= ~(SJA1105_TXC_PD | SJA1105_TXC_BYPASS); /* Disable power down and bypass */
+        reg_data &= ~SJA1105_TXC_DELAY_MASK;
+        reg_data |= (SJA1105_TXC_DELAY_MASK & (tx_delay << SJA1105_TXC_DELAY_SHIFT));
+    }
+
+    /* Set the RX delay */
+    if (rx_delay != SJA1105_ID_NONE) {
+        reg_data &= ~(SJA1105_RXC_PD | SJA1105_RXC_BYPASS); /* Disable power down and bypass */
+        reg_data &= ~SJA1105_RXC_DELAY_MASK;
+        reg_data |= (SJA1105_RXC_DELAY_MASK & (rx_delay << SJA1105_RXC_DELAY_SHIFT));
+    }
+
+    /* Update the internal copy of the table */
+    if (dev->tables.acu_config_parameters.in_use) {
+        dev->tables.acu_config_parameters.data[SJA1105_ACU_TABLE_PAD_MIIX_ID_INDEX(port_num)] = reg_data;
+    }
+
+    /* Write the config */
+    if (write) {
+        status                                           = SJA1105_WriteRegister(dev, SJA1105_ACU_REG_CFG_PAD_MIIX_ID(port_num), &reg_data, 1);
+        dev->tables.acu_config_parameters.data_crc_valid = false;
+        if (status != SJA1105_OK) return status;
+    }
 
     return status;
 }

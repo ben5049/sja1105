@@ -79,7 +79,7 @@ sja1105_status_t SJA1105_CheckTable(sja1105_handle_t *dev, sja1105_block_id_t id
     sja1105_status_t status = SJA1105_OK;
 
     const sja1105_table_t table = {
-        .id   = &id,
+        .id   = (uint8_t *) &id,
         .size = &size,
         .data = (uint32_t *) table_data, /* Discard const :( */
     };
