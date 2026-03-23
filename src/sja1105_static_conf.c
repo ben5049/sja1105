@@ -409,7 +409,7 @@ sja1105_status_t SJA1105_WriteStaticConfig(sja1105_handle_t *dev, bool safe) {
             table = &dev->tables.by_index[i];
             if (!table->in_use) continue;
 
-#ifdef DEBUG
+#if DEBUG
             sja1105_block_id_t id = *table->id;
             UNUSED(id);
 #endif

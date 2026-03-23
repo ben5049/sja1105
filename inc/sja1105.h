@@ -74,8 +74,8 @@ extern "C" {
 typedef struct sja1105_handle_t sja1105_handle_t;
 
 typedef enum {
-    SJA1105_PIN_SET,
-    SJA1105_PIN_RESET
+    SJA1105_PIN_RESET,
+    SJA1105_PIN_SET
 } sja1105_pinstate_t;
 
 typedef enum {
