@@ -45,7 +45,6 @@ sja1105_status_t __SJA1105_ReadRegister(sja1105_handle_t *dev, uint32_t addr, ui
         /* Send command frame */
         status = SJA1105_SPI_TRANSMIT(&command_frame, 1);
         if (status != SJA1105_OK) {
-            dev->events.spi_errors++;
             goto end;
         }
         dev->events.words_written++;
@@ -66,7 +65,9 @@ sja1105_status_t __SJA1105_ReadRegister(sja1105_handle_t *dev, uint32_t addr, ui
             }
         } else {
             status = SJA1105_SPI_RECEIVE(&data[size - dwords_remaining], block_size);
-            if (status != SJA1105_OK) goto end;
+            if (status != SJA1105_OK) {
+                goto end;
+            }
         }
 
         /* End the transaction */
