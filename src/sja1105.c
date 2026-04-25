@@ -431,7 +431,8 @@ end:
 sja1105_status_t SJA1105_ReadStatistics(sja1105_handle_t *dev, sja1105_statistics_t *stats) {
 
     sja1105_status_t status = SJA1105_OK;
-    uint32_t         reg_data[SJA1105_NUM_PORTS * SJA1105_HIGH_LEVEL_STATS_SIZE];
+    uint32_t         reg_data[MAX((SJA1105_NUM_PORTS * SJA1105_HIGH_LEVEL_STATS_SIZE),
+                                  (SJA1105_NUM_PORTS * SJA1105_MAC_LEVEL_STATS_SIZE))];
 
     /* Check the device is initialised and take the mutex */
     SJA1105_LOCK;
@@ -456,8 +457,10 @@ sja1105_status_t SJA1105_ReadStatistics(sja1105_handle_t *dev, sja1105_statistic
         }
     }
 
-    // status = SJA1105_ReadRegister(dev, 0x200, reg_data2, (0x01 + 0x01) * 5);
-    // if (status != SJA1105_OK) goto end;
+    /* If any of these bits are set, something has almost certainly gone very wrong */
+    status = SJA1105_ReadRegister(dev, SJA1105_REG_MAC_LEVEL_STATS_PORT0, reg_data, SJA1105_NUM_PORTS * SJA1105_MAC_LEVEL_STATS_SIZE);
+    if (status != SJA1105_OK) goto end;
+
     // status = SJA1105_ReadRegister(dev, 0x600, reg_data2, (0x0b + 0x05) * 5);
     // if (status != SJA1105_OK) goto end;
     // status = SJA1105_ReadRegister(dev, 0x1400, reg_data2, (0x16 + 0x01) * 5);
