@@ -22,30 +22,40 @@ extern "C" {
 /* ---------------------------------------------------------------------------- */
 
 enum SJA1105_GeneralReg_Enum {
-    SJA1105_REG_DEVICE_ID              = 0x00000000,
-    SJA1105_REG_STATIC_CONF_FLAGS      = 0x00000001,
-    SJA1105_REG_VL_PART_STATUS         = 0x00000002,
-    SJA1105_REG_GENERAL_STATUS_1       = 0x00000003,
-    SJA1105_REG_GENERAL_STATUS_2       = 0x00000004,
-    SJA1105_REG_GENERAL_STATUS_3       = 0x00000005,
-    SJA1105_REG_GENERAL_STATUS_4       = 0x00000006,
-    SJA1105_REG_GENERAL_STATUS_5       = 0x00000007,
-    SJA1105_REG_GENERAL_STATUS_6       = 0x00000008,
-    SJA1105_REG_GENERAL_STATUS_7       = 0x00000009,
-    SJA1105_REG_GENERAL_STATUS_8       = 0x0000000a,
-    SJA1105_REG_GENERAL_STATUS_9       = 0x0000000b,
-    SJA1105_REG_GENERAL_STATUS_10      = 0x0000000c, /* RAM Parity error register (lower) */
-    SJA1105_REG_GENERAL_STATUS_11      = 0x0000000d, /* RAM Parity error register (upper) */
-    SJA1105_REG_MAC_LEVEL_STATS_PORT0  = 0x00000200,
-    SJA1105_REG_MAC_LEVEL_STATS_PORT1  = 0x00000202,
-    SJA1105_REG_MAC_LEVEL_STATS_PORT2  = 0x00000204,
-    SJA1105_REG_MAC_LEVEL_STATS_PORT3  = 0x00000206,
-    SJA1105_REG_MAC_LEVEL_STATS_PORT4  = 0x00000208,
-    SJA1105_REG_HIGH_LEVEL_STATS_PORT0 = 0x00000400,
-    SJA1105_REG_HIGH_LEVEL_STATS_PORT1 = 0x00000410,
-    SJA1105_REG_HIGH_LEVEL_STATS_PORT2 = 0x00000420,
-    SJA1105_REG_HIGH_LEVEL_STATS_PORT3 = 0x00000430,
-    SJA1105_REG_HIGH_LEVEL_STATS_PORT4 = 0x00000440,
+    SJA1105_REG_DEVICE_ID               = 0x00000000,
+    SJA1105_REG_STATIC_CONF_FLAGS       = 0x00000001,
+    SJA1105_REG_VL_PART_STATUS          = 0x00000002,
+    SJA1105_REG_GENERAL_STATUS_1        = 0x00000003,
+    SJA1105_REG_GENERAL_STATUS_2        = 0x00000004,
+    SJA1105_REG_GENERAL_STATUS_3        = 0x00000005,
+    SJA1105_REG_GENERAL_STATUS_4        = 0x00000006,
+    SJA1105_REG_GENERAL_STATUS_5        = 0x00000007,
+    SJA1105_REG_GENERAL_STATUS_6        = 0x00000008,
+    SJA1105_REG_GENERAL_STATUS_7        = 0x00000009,
+    SJA1105_REG_GENERAL_STATUS_8        = 0x0000000a,
+    SJA1105_REG_GENERAL_STATUS_9        = 0x0000000b,
+    SJA1105_REG_GENERAL_STATUS_10       = 0x0000000c, /* RAM Parity error register (lower) */
+    SJA1105_REG_GENERAL_STATUS_11       = 0x0000000d, /* RAM Parity error register (upper) */
+    SJA1105_REG_MAC_LEVEL_STATS_PORT0   = 0x00000200,
+    SJA1105_REG_MAC_LEVEL_STATS_PORT1   = 0x00000202,
+    SJA1105_REG_MAC_LEVEL_STATS_PORT2   = 0x00000204,
+    SJA1105_REG_MAC_LEVEL_STATS_PORT3   = 0x00000206,
+    SJA1105_REG_MAC_LEVEL_STATS_PORT4   = 0x00000208,
+    SJA1105_REG_HIGH_LEVEL_STATS1_PORT0 = 0x00000400,
+    SJA1105_REG_HIGH_LEVEL_STATS1_PORT1 = 0x00000410,
+    SJA1105_REG_HIGH_LEVEL_STATS1_PORT2 = 0x00000420,
+    SJA1105_REG_HIGH_LEVEL_STATS1_PORT3 = 0x00000430,
+    SJA1105_REG_HIGH_LEVEL_STATS1_PORT4 = 0x00000440,
+    SJA1105_REG_HIGH_LEVEL_STATS2_PORT0 = 0x00000600,
+    SJA1105_REG_HIGH_LEVEL_STATS2_PORT1 = 0x00000610,
+    SJA1105_REG_HIGH_LEVEL_STATS2_PORT2 = 0x00000620,
+    SJA1105_REG_HIGH_LEVEL_STATS2_PORT3 = 0x00000630,
+    SJA1105_REG_HIGH_LEVEL_STATS2_PORT4 = 0x00000640,
+    SJA1105_REG_ETHERNET_STATS_PORT0    = 0x00001400,
+    SJA1105_REG_ETHERNET_STATS_PORT1    = 0x00001418,
+    SJA1105_REG_ETHERNET_STATS_PORT2    = 0x00001430,
+    SJA1105_REG_ETHERNET_STATS_PORT3    = 0x00001448,
+    SJA1105_REG_ETHERNET_STATS_PORT4    = 0x00001460,
 };
 
 enum SJA1105_DeviceID_Enum {
@@ -54,44 +64,98 @@ enum SJA1105_DeviceID_Enum {
     SJA1105QS_DEVICE_ID = 0xae00030e,
 };
 
-#define SJA1105_CONFIGS_SHIFT                      (31)
-#define SJA1105_CONFIGS_MASK                       (0x1 << SJA1105_CONFIGS_SHIFT)
-#define SJA1105_CRCCHKL_SHIFT                      (30)                           /* Local CRC check */
-#define SJA1105_CRCCHKL_MASK                       (0x1 << SJA1105_CRCCHKL_SHIFT) /* Local CRC check */
-#define SJA1105_IDS_SHIFT                          (29)
-#define SJA1105_IDS_MASK                           (0x1 << SJA1105_IDS_SHIFT)
-#define SJA1105_CRCCHKG_SHIFT                      (28)                           /* Global CRC check */
-#define SJA1105_CRCCHKG_MASK                       (0x1 << SJA1105_CRCCHKG_SHIFT) /* Global CRC check */
+#define SJA1105_CONFIGS_SHIFT                              (31)
+#define SJA1105_CONFIGS_MASK                               (0x1 << SJA1105_CONFIGS_SHIFT)
+#define SJA1105_CRCCHKL_SHIFT                              (30)                           /* Local CRC check */
+#define SJA1105_CRCCHKL_MASK                               (0x1 << SJA1105_CRCCHKL_SHIFT) /* Local CRC check */
+#define SJA1105_IDS_SHIFT                                  (29)
+#define SJA1105_IDS_MASK                                   (0x1 << SJA1105_IDS_SHIFT)
+#define SJA1105_CRCCHKG_SHIFT                              (28)                           /* Global CRC check */
+#define SJA1105_CRCCHKG_MASK                               (0x1 << SJA1105_CRCCHKG_SHIFT) /* Global CRC check */
 
-#define SJA1105_REGULAR_CHECK_ADDR                 (SJA1105_REG_VL_PART_STATUS)
-#define SJA1105_REGULAR_CHECK_SIZE                 (SJA1105_REG_GENERAL_STATUS_11 - SJA1105_REGULAR_CHECK_ADDR + 1)
+#define SJA1105_REGULAR_CHECK_ADDR                         (SJA1105_REG_VL_PART_STATUS)
+#define SJA1105_REGULAR_CHECK_SIZE                         (SJA1105_REG_GENERAL_STATUS_11 - SJA1105_REGULAR_CHECK_ADDR + 1)
 
-#define SJA1105_L2BUSYS_SHIFT                      (0)
-#define SJA1105_L2BUSYS_MASK                       (0x1 << SJA1105_L2BUSYS_SHIFT)
+#define SJA1105_L2BUSYS_SHIFT                              (0)
+#define SJA1105_L2BUSYS_MASK                               (0x1 << SJA1105_L2BUSYS_SHIFT)
 
-#define SJA1105_VLPARTS                            (1 << 0)
-#define SJA1105_VLROUTES                           (1 << 1)
-#define SJA1105_VLPARIND_SHIFT                     (8)
-#define SJA1105_VLPARIND_MASK                      (0xff << SJA1105_VLPARIND_SHIFT)
-#define SJA1105_VLIND_SHIFT                        (16)
-#define SJA1105_VLIND_MASK                         (0xffff << SJA1105_VLIND_SHIFT)
+#define SJA1105_VLPARTS                                    (1 << 0)
+#define SJA1105_VLROUTES                                   (1 << 1)
+#define SJA1105_VLPARIND_SHIFT                             (8)
+#define SJA1105_VLPARIND_MASK                              (0xff << SJA1105_VLPARIND_SHIFT)
+#define SJA1105_VLIND_SHIFT                                (16)
+#define SJA1105_VLIND_MASK                                 (0xffff << SJA1105_VLIND_SHIFT)
 
-#define SJA1105_PARTS                              (1 << 0)
-#define SJA1105_FWDS                               (1 << 1)
-#define SJA1105_FWDS_PARTS_PORT_SHIFT              (8)
-#define SJA1105_FWDS_PARTS_PORT_MASK               (0xff << SJA1105_FWDS_PARTS_PORT_SHIFT)
+#define SJA1105_PARTS                                      (1 << 0)
+#define SJA1105_FWDS                                       (1 << 1)
+#define SJA1105_FWDS_PARTS_PORT_SHIFT                      (8)
+#define SJA1105_FWDS_PARTS_PORT_MASK                       (0xff << SJA1105_FWDS_PARTS_PORT_SHIFT)
 
-#define SJA1105_MAC_LEVEL_STATS_SIZE               (0x2)
-#define SJA1105_MAC_LEVEL_STATS_PORT_OFFSET(port)  ((port) * SJA1105_MAC_LEVEL_STATS_SIZE)
+#define SJA1105_MAC_LEVEL_STATS_SIZE                       (SJA1105_REG_MAC_LEVEL_STATS_PORT1 - SJA1105_REG_MAC_LEVEL_STATS_PORT0)
+#define SJA1105_MAC_LEVEL_STATS_COUNTERS_PORT_OFFSET(port) ((port) * SJA1105_MAC_LEVEL_STATS_SIZE)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_PORT_OFFSET(port)    (((port) * SJA1105_MAC_LEVEL_STATS_SIZE) + 1)
 
-#define SJA1105_HIGH_LEVEL_STATS_SIZE              (0x10)
-#define SJA1105_HIGH_LEVEL_STATS_PORT_OFFSET(port) ((port) * SJA1105_HIGH_LEVEL_STATS_SIZE)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_AGEDRP               (1 << 0)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_SPCERR               (1 << 1)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_DRPNONA664ERR        (1 << 2)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_POLIECERR            (1 << 3)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_BAGDROP              (1 << 4)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_LENDROP              (1 << 5)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_PORTDROP             (1 << 6)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_AGEPRIOR_SHIFT       (8)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_AGEPRIOR_MASK        (0xf << SJA1105_MAC_LEVEL_STATS_FLAGS_AGEPRIOR_SHIFT)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_SPCPRIOR_SHIFT       (12)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_SPCPRIOR_MASK        (0xf << SJA1105_MAC_LEVEL_STATS_FLAGS_SPCPRIOR_SHIFT)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_PCFBAGDROP           (1 << 16)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_DOMERR               (1 << 17)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_INTCYOV              (1 << 18)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_INVTYP               (1 << 19)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_MEMERR               (1 << 21)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_MEMOV                (1 << 22)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_NOMASTER             (1 << 23)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_PRIORERR             (1 << 24)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_TCTIMEOUT            (1 << 25)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_SIZEERR              (1 << 26)
+#define SJA1105_MAC_LEVEL_STATS_FLAGS_TYPEERR              (1 << 27)
 
-#define SJA1105_HIGH_LEVEL_STATS_N_TXBYTE_L        (0x0)
-#define SJA1105_HIGH_LEVEL_STATS_N_TXBYTE_H        (0x1)
-#define SJA1105_HIGH_LEVEL_STATS_N_RXBYTE_L        (0x4)
-#define SJA1105_HIGH_LEVEL_STATS_N_RXBYTE_H        (0x5)
-#define SJA1105_HIGH_LEVEL_STATS_N_POLERR          (0x8)
+#define SJA1105_HIGH_LEVEL_STATS1_SIZE                     (SJA1105_REG_HIGH_LEVEL_STATS1_PORT1 - SJA1105_REG_HIGH_LEVEL_STATS1_PORT0)
+#define SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port)        ((port) * SJA1105_HIGH_LEVEL_STATS1_SIZE)
+
+#define SJA1105_HIGH_LEVEL_STATS1_N_TXBYTE_L               (0x0)
+#define SJA1105_HIGH_LEVEL_STATS1_N_TXBYTE_H               (0x1)
+#define SJA1105_HIGH_LEVEL_STATS1_N_TXFRM_L                (0x2)
+#define SJA1105_HIGH_LEVEL_STATS1_N_TXFRM_H                (0x3)
+#define SJA1105_HIGH_LEVEL_STATS1_N_RXBYTE_L               (0x4)
+#define SJA1105_HIGH_LEVEL_STATS1_N_RXBYTE_H               (0x5)
+#define SJA1105_HIGH_LEVEL_STATS1_N_RXFRM_L                (0x6)
+#define SJA1105_HIGH_LEVEL_STATS1_N_RXFRM_H                (0x7)
+#define SJA1105_HIGH_LEVEL_STATS1_N_POLERR                 (0x8)
+#define SJA1105_HIGH_LEVEL_STATS1_N_CTPOLERR               (0x9)
+#define SJA1105_HIGH_LEVEL_STATS1_N_VNOTFOUND              (0xa)
+#define SJA1105_HIGH_LEVEL_STATS1_N_CRCERR                 (0xb)
+#define SJA1105_HIGH_LEVEL_STATS1_N_SIZEERR                (0xc)
+#define SJA1105_HIGH_LEVEL_STATS1_N_UNRELEASED             (0xd)
+#define SJA1105_HIGH_LEVEL_STATS1_N_VLANERR                (0xe)
+#define SJA1105_HIGH_LEVEL_STATS1_N_N664ERR                (0xf)
+
+#define SJA1105_HIGH_LEVEL_STATS2_SIZE                     (SJA1105_REG_HIGH_LEVEL_STATS2_PORT1 - SJA1105_REG_HIGH_LEVEL_STATS2_PORT0)
+#define SJA1105_HIGH_LEVEL_STATS2_PORT_OFFSET(port)        ((port) * SJA1105_HIGH_LEVEL_STATS2_SIZE)
+
+#define SJA1105_HIGH_LEVEL_STATS2_N_NOT_REACH              (0x0)
+#define SJA1105_HIGH_LEVEL_STATS2_N_EGR_DISABLED           (0x1)
+#define SJA1105_HIGH_LEVEL_STATS2_N_PART_DROP              (0x2)
+#define SJA1105_HIGH_LEVEL_STATS2_N_QFULL                  (0x3)
+
+#define SJA1105_ETHERNET_STATS_SIZE                        (SJA1105_REG_ETHERNET_STATS_PORT1 - SJA1105_REG_ETHERNET_STATS_PORT0)
+#define SJA1105_ETHERNET_STATS_PORT_OFFSET(port)           ((port) * SJA1105_ETHERNET_STATS_SIZE)
+
+#define SJA1105_ETHERNET_STATS_N_DROPS_UTAG                (0x10)
+#define SJA1105_ETHERNET_STATS_N_DROPS_SITAG               (0x11)
+#define SJA1105_ETHERNET_STATS_N_DROPS_SOTAG               (0x12)
+#define SJA1105_ETHERNET_STATS_N_DROPS_DTAG                (0x13)
+#define SJA1105_ETHERNET_STATS_N_DROPS_ILL_DTAG            (0x14)
+#define SJA1105_ETHERNET_STATS_N_DROPS_EMPTY_ROUTE         (0x15)
+#define SJA1105_ETHERNET_STATS_N_DROPS_NOLEARN             (0x16)
 
 /* ---------------------------------------------------------------------------- */
 /* Auxiliary Configuration Unit */

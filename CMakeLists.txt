@@ -6,6 +6,7 @@ add_library(sja1105 STATIC
     src/sja1105_io.c
     src/sja1105_static_conf.c
     src/sja1105_tables.c
+    src/sja1105_stats.c
 )
 
 target_include_directories(sja1105 PUBLIC

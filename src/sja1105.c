@@ -428,51 +428,6 @@ end:
 }
 
 
-sja1105_status_t SJA1105_ReadStatistics(sja1105_handle_t *dev, sja1105_statistics_t *stats) {
-
-    sja1105_status_t status = SJA1105_OK;
-    uint32_t         reg_data[MAX((SJA1105_NUM_PORTS * SJA1105_HIGH_LEVEL_STATS_SIZE),
-                                  (SJA1105_NUM_PORTS * SJA1105_MAC_LEVEL_STATS_SIZE))];
-
-    /* Check the device is initialised and take the mutex */
-    SJA1105_LOCK;
-
-    /* Get the statistics */
-    status = SJA1105_ReadRegister(dev, SJA1105_REG_HIGH_LEVEL_STATS_PORT0, reg_data, SJA1105_NUM_PORTS * SJA1105_HIGH_LEVEL_STATS_SIZE);
-    if (status != SJA1105_OK) goto end;
-
-    /* Store the relevent statistics in the output */
-    for (uint_fast8_t port = 0; port < SJA1105_NUM_PORTS; port++) {
-
-        /* Get the byte counters */
-        stats->tx_bytes[port]  = reg_data[SJA1105_HIGH_LEVEL_STATS_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS_N_TXBYTE_L];
-        stats->tx_bytes[port] |= (uint64_t) reg_data[SJA1105_HIGH_LEVEL_STATS_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS_N_TXBYTE_H] << 32;
-        stats->rx_bytes[port]  = reg_data[SJA1105_HIGH_LEVEL_STATS_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS_N_RXBYTE_L];
-        stats->rx_bytes[port] |= (uint64_t) reg_data[SJA1105_HIGH_LEVEL_STATS_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS_N_RXBYTE_H] << 32;
-
-        /* Sum the dropped frame counter registers */
-        stats->dropped_frames[port] = 0;
-        for (uint_fast8_t err_reg = SJA1105_HIGH_LEVEL_STATS_N_POLERR; err_reg < SJA1105_HIGH_LEVEL_STATS_SIZE; err_reg++) {
-            stats->dropped_frames[port] += reg_data[SJA1105_HIGH_LEVEL_STATS_PORT_OFFSET(port) + err_reg];
-        }
-    }
-
-    /* If any of these bits are set, something has almost certainly gone very wrong */
-    status = SJA1105_ReadRegister(dev, SJA1105_REG_MAC_LEVEL_STATS_PORT0, reg_data, SJA1105_NUM_PORTS * SJA1105_MAC_LEVEL_STATS_SIZE);
-    if (status != SJA1105_OK) goto end;
-
-    // status = SJA1105_ReadRegister(dev, 0x600, reg_data2, (0x0b + 0x05) * 5);
-    // if (status != SJA1105_OK) goto end;
-    // status = SJA1105_ReadRegister(dev, 0x1400, reg_data2, (0x16 + 0x01) * 5);
-    // if (status != SJA1105_OK) goto end;
-
-    /* Give the mutex and return */
-end:
-    SJA1105_UNLOCK;
-    return status;
-}
-
-
 /* TODO: Disable transmitted clocks */
 sja1105_status_t SJA1105_PortSleep(sja1105_handle_t *dev, uint8_t port_num) {
 

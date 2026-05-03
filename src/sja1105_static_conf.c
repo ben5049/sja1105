@@ -43,7 +43,7 @@ sja1105_status_t SJA1105_ReadStaticConfFlags(sja1105_handle_t *dev, uint32_t *fl
 
         /* Add a small delay to avoid sampling the same value again */
         if ((i > 0) && !valid) {
-            SJA1105_DELAY_NS(5000);
+            SJA1105_DELAY_MS(1);
         }
     }
 

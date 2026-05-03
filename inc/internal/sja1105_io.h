@@ -20,6 +20,10 @@ extern "C" {
 #define MAX(a, b)                 ((a) > (b) ? (a) : (b))
 #define CONSTRAIN(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
 
+#define U32_BYTE_0(reg)           ((uint8_t) (((uint32_t) (reg) >> (0 * 8)) & 0xff))
+#define U32_BYTE_1(reg)           ((uint8_t) (((uint32_t) (reg) >> (1 * 8)) & 0xff))
+#define U32_BYTE_2(reg)           ((uint8_t) (((uint32_t) (reg) >> (2 * 8)) & 0xff))
+#define U32_BYTE_3(reg)           ((uint8_t) (((uint32_t) (reg) >> (3 * 8)) & 0xff))
 
 /* Control frame */
 #define SJA1105_SPI_WRITE_FRAME         (1 << 31)    /* 1 in the most significant bit signifies a write */

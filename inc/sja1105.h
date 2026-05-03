@@ -53,6 +53,7 @@ extern "C" {
 #endif
 
 #define SJA1105_SPEED_MBPS_TO_ENUM(mbps) (((mbps) == 10) ? SJA1105_SPEED_10M : (((mbps) == 100) ? SJA1105_SPEED_100M : (((mbps) == 1000) ? SJA1105_SPEED_1G : SJA1105_SPEED_INVALID)))
+#define SJA1105_SPEED_ENUM_TO_MBPS(mbps) (((mbps) == SJA1105_SPEED_10M) ? 10 : (((mbps) == SJA1105_SPEED_100M) ? 100 : (((mbps) == SJA1105_SPEED_1G) ? 1000 : SJA1105_SPEED_INVALID)))
 
 #ifndef UNUSED
 #define UNUSED(x) ((void) (x))
@@ -307,12 +308,83 @@ struct sja1105_handle_t {
     atomic_bool                initialised;
 };
 
-/* Stores informations from device status registers */
+/* MAC Level diagnostics counters */
+typedef struct {
+    uint32_t runt_count[SJA1105_NUM_PORTS];       /* N_RUNT */
+    uint32_t sof_errors[SJA1105_NUM_PORTS];       /* N_SOFERR */
+    uint32_t alignment_errors[SJA1105_NUM_PORTS]; /* N_ALIGNERR */
+    uint32_t mii_errors[SJA1105_NUM_PORTS];       /* N_MIIERR */
+    bool     typeerr[SJA1105_NUM_PORTS];          /* TYPEERR */
+    bool     sizeerr[SJA1105_NUM_PORTS];          /* SIZEERR */
+    bool     tcttimeout[SJA1105_NUM_PORTS];       /* TCTIMEOUT */
+    bool     priorerr[SJA1105_NUM_PORTS];         /* PRIORERR */
+    bool     nomaster[SJA1105_NUM_PORTS];         /* NOMASTER */
+    bool     memov[SJA1105_NUM_PORTS];            /* MEMOV */
+    bool     memerr[SJA1105_NUM_PORTS];           /* MEMERR */
+    bool     invtyp[SJA1105_NUM_PORTS];           /* INVTYP */
+    bool     intcyov[SJA1105_NUM_PORTS];          /* INTCYOV */
+    bool     domerr[SJA1105_NUM_PORTS];           /* DOMERR */
+    bool     pcfbagdrop[SJA1105_NUM_PORTS];       /* PCFBAGDROP */
+    uint8_t  spcprior[SJA1105_NUM_PORTS];         /* SPCPRIOR */
+    uint8_t  ageprior[SJA1105_NUM_PORTS];         /* AGEPRIOR */
+    bool     portdrop[SJA1105_NUM_PORTS];         /* PORTDROP */
+    bool     lendrop[SJA1105_NUM_PORTS];          /* LENDROP */
+    bool     bagdrop[SJA1105_NUM_PORTS];          /* BAGDROP */
+    bool     poliecerr[SJA1105_NUM_PORTS];        /* POLIECERR */
+    bool     drpnona664err[SJA1105_NUM_PORTS];    /* DRPNONA664ERR */
+    bool     spcerr[SJA1105_NUM_PORTS];           /* SPCERR */
+    bool     agedrp[SJA1105_NUM_PORTS];           /* AGEDRP */
+
+} sja1105_stats_mac_level_t;
+
+/* High level statistics */
+typedef struct {
+
+    /* High level statistics part 1 */
+    uint64_t tx_bytes[SJA1105_NUM_PORTS];
+    uint64_t tx_frames[SJA1105_NUM_PORTS];
+    uint64_t rx_bytes[SJA1105_NUM_PORTS];
+    uint64_t rx_frames[SJA1105_NUM_PORTS];
+    uint32_t policing_errors[SJA1105_NUM_PORTS];
+    uint32_t policing_errors_critical[SJA1105_NUM_PORTS];
+    uint32_t virtual_link_not_found[SJA1105_NUM_PORTS];
+    uint32_t crc_errors[SJA1105_NUM_PORTS];
+    uint32_t size_errors[SJA1105_NUM_PORTS];
+    uint32_t unreleased_errors[SJA1105_NUM_PORTS];
+    uint32_t vlan_errors[SJA1105_NUM_PORTS];
+    uint32_t non_664_errors[SJA1105_NUM_PORTS];
+
+    /* High level statistics part 2 */
+    uint32_t queue_full[SJA1105_NUM_PORTS];
+    uint32_t partition_drop[SJA1105_NUM_PORTS];
+    uint32_t egress_disabled[SJA1105_NUM_PORTS];
+    uint32_t not_reachable[SJA1105_NUM_PORTS];
+
+} sja1105_stats_high_level_t;
+
+/* Ethernet statistics counters */
+typedef struct {
+    uint32_t dropped_no_learn[SJA1105_NUM_PORTS];     /* N_DROPS_NOLEARN */
+    uint32_t dropped_empty_route[SJA1105_NUM_PORTS];  /* N_DROPS_EMPTY_ROUTE */
+    uint32_t dropped_illegal_dtag[SJA1105_NUM_PORTS]; /* N_DROPS_ILL_DTAG */
+    uint32_t dropped_dtag[SJA1105_NUM_PORTS];         /* N_DROPS_DTAG */
+    uint32_t dropped_sotag[SJA1105_NUM_PORTS];        /* N_DROPS_SOTAG */
+    uint32_t dropped_sitag[SJA1105_NUM_PORTS];        /* N_DROPS_SITAG */
+    uint32_t dropped_utag[SJA1105_NUM_PORTS];         /* N_DROPS_UTAG */
+    // TODO: frame sizes?
+} sja1105_stats_ethernet_t;
+
 typedef struct {
     uint64_t tx_bytes[SJA1105_NUM_PORTS];
     uint64_t rx_bytes[SJA1105_NUM_PORTS];
     uint32_t dropped_frames[SJA1105_NUM_PORTS];
-} sja1105_statistics_t;
+} sja1105_stats_summary_t;
+
+typedef struct {
+    sja1105_stats_mac_level_t  mac;
+    sja1105_stats_high_level_t high_level;
+    sja1105_stats_ethernet_t   ethernet;
+} sja1105_stats_detailed_t;
 
 
 /* Functions */
@@ -338,7 +410,8 @@ sja1105_status_t SJA1105_ReadTemperature(sja1105_handle_t *dev, float *temp);
 sja1105_status_t SJA1105_CheckStatusRegisters(sja1105_handle_t *dev);
 sja1105_status_t SJA1105_MACAddrTrapTest(sja1105_handle_t *dev, const uint8_t *addr, bool *trapped, bool *send_meta, bool *incl_srcpt);
 sja1105_status_t SJA1105_ReadAllTables(sja1105_handle_t *dev);
-sja1105_status_t SJA1105_ReadStatistics(sja1105_handle_t *dev, sja1105_statistics_t *stats);
+sja1105_status_t SJA1105_ReadStatsSummary(sja1105_handle_t *dev, sja1105_stats_summary_t *stats);
+sja1105_status_t SJA1105_ReadStatsDetailed(sja1105_handle_t *dev, sja1105_stats_detailed_t *stats);
 
 /* Utilities */
 sja1105_status_t SJA1105_L2EntryReadByIndex(sja1105_handle_t *dev, uint16_t index, bool managment, uint32_t entry[SJA1105_L2ADDR_LU_ENTRY_SIZE]);
