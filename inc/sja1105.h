@@ -273,6 +273,8 @@ typedef void (*sja1105_callback_delay_ms_t)(uint32_t ms, void *context);
 typedef void (*sja1105_callback_delay_ns_t)(uint32_t ns, void *context);
 typedef sja1105_status_t (*sja1105_callback_take_mutex_t)(uint32_t timeout, void *context);
 typedef sja1105_status_t (*sja1105_callback_give_mutex_t)(void *context);
+typedef void (*sja1105_callback_enter_critical_t)(void *context);
+typedef void (*sja1105_callback_exit_critical_t)(void *context);
 typedef sja1105_status_t (*sja1105_callback_allocate_t)(uint32_t **memory_ptr, uint32_t size, void *context);
 typedef sja1105_status_t (*sja1105_callback_free_t)(uint32_t *memory_ptr, void *context);
 typedef sja1105_status_t (*sja1105_callback_free_all_t)(void *context);
@@ -290,6 +292,8 @@ typedef struct {
     sja1105_callback_delay_ns_t             callback_delay_ns;             /* Blocking delay in ns */
     sja1105_callback_take_mutex_t           callback_take_mutex;           /* Take the mutex protecting the device */
     sja1105_callback_give_mutex_t           callback_give_mutex;           /* Give the mutex protecting the device */
+    sja1105_callback_enter_critical_t       callback_enter_critical;       /* Enter a timing critical section */
+    sja1105_callback_exit_critical_t        callback_exit_critical;        /* Exit a timing critical section */
     sja1105_callback_allocate_t             callback_allocate;             /* Allocate a given number of 32-bit words */
     sja1105_callback_free_t                 callback_free;                 /* Free memory */
     sja1105_callback_free_all_t             callback_free_all;             /* Free all allocated memory */
@@ -390,7 +394,7 @@ typedef struct {
 /* Functions */
 
 /* Initialisation */
-sja1105_status_t SJA1105_PortConfigure(sja1105_config_t *config, const sja1105_port_t *port_config, bool cascaded);
+sja1105_status_t SJA1105_PortConfigure(sja1105_config_t *config, const sja1105_port_t *port_config);
 sja1105_status_t SJA1105_Init(sja1105_handle_t *dev, const sja1105_config_t *config, const sja1105_callbacks_t *callbacks, void *callback_context, uint32_t fixed_length_table_buffer[SJA1105_FIXED_BUFFER_SIZE], const uint32_t *static_conf, uint32_t static_conf_size);
 sja1105_status_t SJA1105_DeInit(sja1105_handle_t *dev, bool hard, bool clear_counters);
 sja1105_status_t SJA1105_ReInit(sja1105_handle_t *dev, const uint32_t *static_conf, uint32_t static_conf_size);

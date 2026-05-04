@@ -29,6 +29,8 @@ sja1105_status_t __SJA1105_ReadRegister(sja1105_handle_t *dev, uint32_t addr, ui
     uint32_t command_frame;
     uint16_t block_size;
 
+    SJA1105_ENTER_CRITICAL;
+
     /* If the number of double words to read is greater than SJA1105_SPI_MAX_PAYLOAD_SIZE, then the read needs to be broken into smaller transactions */
     do {
 
@@ -79,9 +81,9 @@ sja1105_status_t __SJA1105_ReadRegister(sja1105_handle_t *dev, uint32_t addr, ui
 
     } while (dwords_remaining > 0);
 
-
 end:
 
+    SJA1105_EXIT_CRITICAL;
     return status;
 }
 
@@ -152,6 +154,8 @@ sja1105_status_t SJA1105_WriteRegister(sja1105_handle_t *dev, uint32_t addr, con
     uint32_t command_frame;
     uint16_t block_size;
 
+    SJA1105_ENTER_CRITICAL;
+
     /* If the payload size is greater than SJA1105_SPI_MAX_PAYLOAD_SIZE, then the write needs to be broken into smaller transactions */
     do {
 
@@ -184,6 +188,7 @@ sja1105_status_t SJA1105_WriteRegister(sja1105_handle_t *dev, uint32_t addr, con
 
 end:
 
+    SJA1105_EXIT_CRITICAL;
     return status;
 }
 
@@ -215,6 +220,8 @@ sja1105_status_t SJA1105_WriteTable(sja1105_handle_t *dev, uint32_t addr, sja110
     header[0] = ((uint32_t) *table->id) << 24;
     header[1] = *table->size & SJA1105_STATIC_CONF_BLOCK_SIZE_MASK;
     header[2] = *table->header_crc;
+
+    SJA1105_ENTER_CRITICAL;
 
     /* Start the transaction after a delay (ensures successive transactions meet timing requirements) */
     SJA1105_DELAY_NS(SJA1105_T_SPI_WR);
@@ -273,6 +280,7 @@ sja1105_status_t SJA1105_WriteTable(sja1105_handle_t *dev, uint32_t addr, sja110
 
 end:
 
+    SJA1105_EXIT_CRITICAL;
     return status;
 }
 
@@ -310,6 +318,8 @@ sja1105_status_t SJA1105_L2LUTInvalidateRange(sja1105_handle_t *dev, uint16_t lo
     reg_data[size - 1] |= SJA1105_DYN_CONF_L2_LUT_RDRWSET;
     reg_data[size - 1] |= ((uint32_t) SJA1105_L2_LUT_HOSTCMD_INVALIDATE_ENTRY << SJA1105_L2_LUT_HOSTCMD_SHIFT) & SJA1105_L2_LUT_HOSTCMD_MASK;
 
+    SJA1105_ENTER_CRITICAL;
+
     /* Iterate through all entries to be invalidated */
     for (uint_fast16_t i = low_i; i <= high_i; i++) {
 
@@ -336,6 +346,7 @@ sja1105_status_t SJA1105_L2LUTInvalidateRange(sja1105_handle_t *dev, uint16_t lo
 
 end:
 
+    SJA1105_EXIT_CRITICAL;
     return status;
 }
 

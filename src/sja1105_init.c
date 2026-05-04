@@ -15,7 +15,7 @@
 #include "internal/sja1105_tables.h"
 
 
-sja1105_status_t SJA1105_PortConfigure(sja1105_config_t *config, const sja1105_port_t *port_config, bool cascaded) {
+sja1105_status_t SJA1105_PortConfigure(sja1105_config_t *config, const sja1105_port_t *port_config) {
 
     sja1105_status_t status = SJA1105_OK;
 
@@ -70,7 +70,7 @@ sja1105_status_t SJA1105_PortConfigure(sja1105_config_t *config, const sja1105_p
     }
 
     /* Assign cascading settings, these are checked later */
-    if (cascaded) {
+    if (config->casc_port == port_config->port_num) {
         config->ports[port_config->port_num].connected_switch_handle   = port_config->connected_switch_handle;
         config->ports[port_config->port_num].connected_switch_port_num = port_config->connected_switch_port_num;
     } else {

@@ -87,6 +87,9 @@ extern "C" {
 
 #define SJA1105_UNLOCK                               dev->callbacks->callback_give_mutex(dev->callback_context)
 
+#define SJA1105_ENTER_CRITICAL                       dev->callbacks->callback_enter_critical(dev->callback_context)
+#define SJA1105_EXIT_CRITICAL                        dev->callbacks->callback_exit_critical(dev->callback_context)
+
 #define SJA1105_ALLOCATE(memory_ptr, size)           dev->callbacks->callback_allocate((memory_ptr), (size), dev->callback_context)
 #define SJA1105_FREE(memory_ptr)                     dev->callbacks->callback_free((memory_ptr), dev->callback_context)
 #define SJA1105_FREE_ALL()                           dev->callbacks->callback_free_all(dev->callback_context)
