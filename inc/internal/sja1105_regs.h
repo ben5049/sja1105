@@ -482,6 +482,10 @@ typedef enum {
 #define SJA1105_SEND_META1                                      (1 << 21)
 #define SJA1105_SEND_META0                                      (1 << 20)
 
+#define SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_OFFSET        (4)  /* bit 126 therefore in the 4th word */
+#define SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_SHIFT         (30) /* shifted up by 30 */
+#define SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_MASK          (0x1 << SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_SHIFT)
+
 #define SJA1105_STATIC_CONF_GENERAL_PARAMS_HOST_PORT_OFFSET     (4)  /* [144:142] therefore in the 5th word */
 #define SJA1105_STATIC_CONF_GENERAL_PARAMS_HOST_PORT_SHIFT      (14) /* shifted up by 14 */
 #define SJA1105_STATIC_CONF_GENERAL_PARAMS_HOST_PORT_MASK       (0x7 << SJA1105_STATIC_CONF_GENERAL_PARAMS_HOST_PORT_SHIFT)
@@ -503,9 +507,38 @@ typedef enum {
 #define SJA1105_STATIC_CONF_XMII_MODE_INTERFACE_MASK(port_num)  (0x3 << SJA1105_STATIC_CONF_XMII_MODE_INTERFACE_SHIFT(port_num))
 
 /* ---------------------------------------------------------------------------- */
-/* Dynamic Reonfiguration */
+/* Control Area */
 /* ---------------------------------------------------------------------------- */
 
+enum SJA1105_CtrlAreaReg_Enum {
+    SJA1105_CTRL_AREA_RAM_PARITY_REG_0   = 0x0e,
+    SJA1105_CTRL_AREA_RAM_PARITY_REG_1   = 0x0f,
+    SJA1105_CTRL_AREA_PORT_STATUS_REG_0  = 0x10,
+    SJA1105_CTRL_AREA_PORT_VL_STATUS_REG = 0x11,
+    SJA1105_CTRL_AREA_PORT_STATUS_REG_1  = 0x12,
+    SJA1105_CTRL_AREA_PTP_REG_1          = 0x18,
+    SJA1105_CTRL_AREA_PTP_REG_2          = 0x13,
+    SJA1105_CTRL_AREA_PTP_REG_3          = 0x14,
+    SJA1105_CTRL_AREA_PTP_REG_4          = 0x15,
+    SJA1105_CTRL_AREA_PTP_REG_5          = 0x16,
+    SJA1105_CTRL_AREA_PTP_REG_6          = 0x17,
+    SJA1105_CTRL_AREA_PTP_REG_7          = 0x19,
+    SJA1105_CTRL_AREA_PTP_REG_8          = 0x1a,
+    SJA1105_CTRL_AREA_PTP_REG_9          = 0x1b,
+    SJA1105_CTRL_AREA_PTP_REG_10         = 0x1c,
+    SJA1105_CTRL_AREA_PTP_REG_11         = 0x1d,
+    SJA1105_CTRL_AREA_PTP_REG_12         = 0x1e,
+    SJA1105_CTRL_AREA_PTP_REG_13         = 0x1f,
+    SJA1105_CTRL_AREA_PTP_REG_14         = 0x20
+};
+
+#define SJA1105_STATIC_CTRL_AREA_PTP_VALID   (1 << 31)
+#define SJA1105_STATIC_CTRL_AREA_PTP_CASSYNC (1 << 26)
+#define SJA1105_STATIC_CTRL_AREA_PTP_CLKADD  (1 << 0)
+
+/* ---------------------------------------------------------------------------- */
+/* Dynamic Reonfiguration */
+/* ---------------------------------------------------------------------------- */
 
 enum SJA1105_DynConfReg_Enum {
     SJA1105_DYN_CONF_L2_LUT_REG_0        = 0x29,

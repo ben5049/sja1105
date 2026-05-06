@@ -487,6 +487,21 @@ sja1105_status_t SJA1105_GetMACFilters(sja1105_handle_t *dev, sja1105_mac_filter
     return status;
 }
 
+
+sja1105_status_t SJA1105_AVBParamsTableGetCASMaster(const sja1105_table_t *table, bool *cas_master) {
+
+    sja1105_status_t status = SJA1105_OK;
+    uint8_t          index  = SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_OFFSET;
+
+    if (index >= *table->size) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
+
+    *cas_master = (bool) (table->data[index] & SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_MASK);
+
+    return status;
+}
+
+
 sja1105_status_t SJA1105_xMIIModeTableCheck(sja1105_handle_t *dev, const sja1105_table_t *table) {
 
     sja1105_status_t    status = SJA1105_OK;

@@ -68,7 +68,10 @@ sja1105_status_t SJA1105_L2ForwardingTableRead(sja1105_handle_t *dev, uint8_t in
 sja1105_status_t SJA1105_GeneralParamsTableCheck(sja1105_handle_t *dev, const sja1105_table_t *table);
 sja1105_status_t SJA1105_GetMACFilters(sja1105_handle_t *dev, sja1105_mac_filters_t *mac_filters);
 
+sja1105_status_t SJA1105_AVBParamsTableGetCASMaster(const sja1105_table_t *table, bool *cas_master);
+
 sja1105_status_t SJA1105_xMIIModeTableCheck(sja1105_handle_t *dev, const sja1105_table_t *table);
+
 
 #ifdef __cplusplus
 }

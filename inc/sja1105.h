@@ -423,6 +423,9 @@ sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint
 sja1105_status_t SJA1105_ManagementRouteFree(sja1105_handle_t *dev, bool force);
 sja1105_status_t SJA1105_FlushTCAM(sja1105_handle_t *dev);
 
+/* TSN */
+sja1105_status_t SJA1105_SyncTimestamps(sja1105_handle_t *dev_a, sja1105_handle_t *dev_b);
+
 
 #ifdef __cplusplus
 }
