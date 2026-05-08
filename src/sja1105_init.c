@@ -205,7 +205,7 @@ sja1105_status_t SJA1105_Init(
     dev->callback_context = callback_context;
 
     /* Reset tables (note this does not free memory) */
-    SJA1105_ResetTables(dev, fixed_length_table_buffer);
+    SJA1105_ResetTablesAndRegs(dev, fixed_length_table_buffer);
 
     /* Reset event counters */
     SJA1105_ResetEventCounters(dev);
@@ -244,6 +244,10 @@ sja1105_status_t SJA1105_Init(
     status = SJA1105_SyncStaticConfig(dev);
     if (status != SJA1105_OK) goto end;
 
+    /* Initialise TSN */
+    status = SJA1105_InitTSN(dev);
+    if (status != SJA1105_OK) goto end;
+
     /* The device has been initialised */
     dev->initialised = true;
 
@@ -274,7 +278,7 @@ sja1105_status_t SJA1105_DeInit(sja1105_handle_t *dev, bool hard, bool clear_cou
     /* Free table memory and reset struct */
     status = SJA1105_FreeAllTableMemory(dev);
     if (status != SJA1105_OK) goto end;
-    SJA1105_ResetTables(dev, hard ? NULL : dev->tables.fixed_length_buffer);
+    SJA1105_ResetTablesAndRegs(dev, hard ? NULL : dev->tables.fixed_length_buffer);
 
     /* A hard deinit means clearing all config structs too */
     if (hard) {
@@ -323,7 +327,7 @@ end:
 
 
 /* THIS WILL NOT FREE MEMORY USED BY TABLES. That should be done before calling this function */
-void SJA1105_ResetTables(sja1105_handle_t *dev, uint32_t fixed_length_table_buffer[SJA1105_FIXED_BUFFER_SIZE]) {
+void SJA1105_ResetTablesAndRegs(sja1105_handle_t *dev, uint32_t fixed_length_table_buffer[SJA1105_FIXED_BUFFER_SIZE]) {
 
     /* Assign the buffer for fixed length tables */
     dev->tables.fixed_length_buffer = fixed_length_table_buffer;
@@ -347,6 +351,10 @@ void SJA1105_ResetTables(sja1105_handle_t *dev, uint32_t fixed_length_table_buff
     /* Reset the static config global CRC */
     dev->tables.global_crc       = 0;
     dev->tables.global_crc_valid = false;
+
+    /* Reset register copies */
+    dev->regs.ptp_ctrl_reg_1_clear_mask = SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS;
+    dev->regs.ptp_ctrl_reg_1_set_mask   = 0;
 }
 
 

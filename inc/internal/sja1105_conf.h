@@ -16,7 +16,7 @@ extern "C" {
 #include "sja1105.h"
 
 
-void SJA1105_ResetTables(sja1105_handle_t *dev, uint32_t fixed_length_table_buffer[SJA1105_FIXED_BUFFER_SIZE]);
+void SJA1105_ResetTablesAndRegs(sja1105_handle_t *dev, uint32_t fixed_length_table_buffer[SJA1105_FIXED_BUFFER_SIZE]);
 void SJA1105_ResetManagementRoutes(sja1105_handle_t *dev);
 void SJA1105_ResetEventCounters(sja1105_handle_t *dev);
 
@@ -39,6 +39,8 @@ sja1105_status_t SJA1105_ReadStaticConfFlags(sja1105_handle_t *dev, uint32_t *fl
 sja1105_status_t SJA1105_FreeAllTableMemory(sja1105_handle_t *dev);
 sja1105_status_t SJA1105_AllocateFixedLengthTable(sja1105_handle_t *dev, const uint32_t *block, uint8_t block_size);
 sja1105_status_t SJA1105_AllocateVariableLengthTable(sja1105_handle_t *dev, const uint32_t *block, uint8_t block_size);
+
+sja1105_status_t SJA1105_InitTSN(sja1105_handle_t *dev);
 
 
 #ifdef __cplusplus

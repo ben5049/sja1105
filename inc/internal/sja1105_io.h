@@ -19,6 +19,7 @@ extern "C" {
 #define MIN(a, b)                 ((a) < (b) ? (a) : (b))
 #define MAX(a, b)                 ((a) > (b) ? (a) : (b))
 #define CONSTRAIN(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
+#define ABS(x)                    ((x) > 0 ? (x) : -(x))
 
 #define U32_BYTE_0(reg)           ((uint8_t) (((uint32_t) (reg) >> (0 * 8)) & 0xff))
 #define U32_BYTE_1(reg)           ((uint8_t) (((uint32_t) (reg) >> (1 * 8)) & 0xff))

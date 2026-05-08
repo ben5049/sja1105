@@ -102,6 +102,7 @@ typedef enum {
     SJA1105_MEMORY_ERROR,
     SJA1105_STATIC_CONF_FLAGS_READ_ERROR,
     SJA1105_INVALID_VALUE_ERROR,
+    SJA1105_CASC_SYNC_FAILED_ERROR,
 } sja1105_status_t;
 
 typedef enum {
@@ -234,6 +235,13 @@ typedef struct {
 } sja1105_tables_t;
 
 typedef struct {
+
+    /* Must store this reg since it is write only but must have certain bits (CORRCLK4TS) kept the same */
+    uint32_t ptp_ctrl_reg_1_set_mask;
+    uint32_t ptp_ctrl_reg_1_clear_mask;
+} sja1105_regs_t;
+
+typedef struct {
     uint8_t mac_fltres0[MAC_ADDR_SIZE];
     uint8_t mac_flt0[MAC_ADDR_SIZE];
     bool    send_meta0;
@@ -307,6 +315,7 @@ struct sja1105_handle_t {
     const sja1105_callbacks_t *callbacks;
     void                      *callback_context;
     sja1105_tables_t           tables;
+    sja1105_regs_t             regs;
     sja1105_event_counters_t   events;
     sja1105_mgmt_routes_t      management_routes;
     atomic_bool                initialised;

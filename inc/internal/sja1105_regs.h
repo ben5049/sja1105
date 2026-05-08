@@ -482,7 +482,7 @@ typedef enum {
 #define SJA1105_SEND_META1                                      (1 << 21)
 #define SJA1105_SEND_META0                                      (1 << 20)
 
-#define SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_OFFSET        (4)  /* bit 126 therefore in the 4th word */
+#define SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_OFFSET        (3)  /* bit 126 therefore in the 4th word */
 #define SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_SHIFT         (30) /* shifted up by 30 */
 #define SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_MASK          (0x1 << SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_SHIFT)
 
@@ -522,19 +522,22 @@ enum SJA1105_CtrlAreaReg_Enum {
     SJA1105_CTRL_AREA_PTP_REG_4          = 0x15,
     SJA1105_CTRL_AREA_PTP_REG_5          = 0x16,
     SJA1105_CTRL_AREA_PTP_REG_6          = 0x17,
-    SJA1105_CTRL_AREA_PTP_REG_7          = 0x19,
-    SJA1105_CTRL_AREA_PTP_REG_8          = 0x1a,
+    SJA1105_CTRL_AREA_PTP_REG_7          = 0x19, /* PTPCLKVALL */
+    SJA1105_CTRL_AREA_PTP_REG_8          = 0x1a, /* PTPCLKVALU */
     SJA1105_CTRL_AREA_PTP_REG_9          = 0x1b,
     SJA1105_CTRL_AREA_PTP_REG_10         = 0x1c,
     SJA1105_CTRL_AREA_PTP_REG_11         = 0x1d,
     SJA1105_CTRL_AREA_PTP_REG_12         = 0x1e,
-    SJA1105_CTRL_AREA_PTP_REG_13         = 0x1f,
-    SJA1105_CTRL_AREA_PTP_REG_14         = 0x20
+    SJA1105_CTRL_AREA_PTP_REG_13         = 0x1f, /* PTPSYNCTSL */
+    SJA1105_CTRL_AREA_PTP_REG_14         = 0x20  /* PTPSYNCTSU */
 };
 
-#define SJA1105_STATIC_CTRL_AREA_PTP_VALID   (1 << 31)
-#define SJA1105_STATIC_CTRL_AREA_PTP_CASSYNC (1 << 26)
-#define SJA1105_STATIC_CTRL_AREA_PTP_CLKADD  (1 << 0)
+#define SJA1105_STATIC_CTRL_AREA_PTP_VALID      (1 << 31)
+#define SJA1105_STATIC_CTRL_AREA_PTP_CASSYNC    (1 << 26)
+#define SJA1105_STATIC_CTRL_AREA_PTP_RESPTP     (1 << 3)
+#define SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS (1 << 2)
+#define SJA1105_STATIC_CTRL_AREA_PTP_CLKSUB     (1 << 1)
+#define SJA1105_STATIC_CTRL_AREA_PTP_CLKADD     (1 << 0)
 
 /* ---------------------------------------------------------------------------- */
 /* Dynamic Reonfiguration */
