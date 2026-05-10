@@ -173,8 +173,8 @@ sja1105_status_t SJA1105_SyncTimestamps(sja1105_handle_t *dev_a, sja1105_handle_
     status = SJA1105_GetTimestampOffset(master, slave, &offset_new);
     if (status != SJA1105_OK) goto end;
 
-    /* Check the new offset under 10us */
-    if (ABS(offset_new) > 1250) {
+    /* Check the new offset under 1us */
+    if (ABS(offset_new) > 125) {
         status = SJA1105_CASC_SYNC_FAILED_ERROR;
         goto end;
     }
