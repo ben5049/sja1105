@@ -423,6 +423,9 @@ sja1105_status_t SJA1105_ReadTemperature(sja1105_handle_t *dev, float *temp);
 sja1105_status_t SJA1105_CheckStatusRegisters(sja1105_handle_t *dev);
 sja1105_status_t SJA1105_MACAddrTrapTest(sja1105_handle_t *dev, const uint8_t *addr, bool *trapped, bool *send_meta, bool *incl_srcpt);
 sja1105_status_t SJA1105_ReadAllTables(sja1105_handle_t *dev);
+sja1105_status_t SJA1105_ReadStatsMAC(sja1105_handle_t *dev, sja1105_stats_mac_level_t *stats);
+sja1105_status_t SJA1105_ReadStatsHighLevel(sja1105_handle_t *dev, sja1105_stats_high_level_t *stats, bool part1, bool part2);
+sja1105_status_t SJA1105_ReadStatsEthernet(sja1105_handle_t *dev, sja1105_stats_ethernet_t *stats);
 sja1105_status_t SJA1105_ReadStatsSummary(sja1105_handle_t *dev, sja1105_stats_summary_t *stats);
 sja1105_status_t SJA1105_ReadStatsDetailed(sja1105_handle_t *dev, sja1105_stats_detailed_t *stats);
 

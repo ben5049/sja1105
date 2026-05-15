@@ -387,11 +387,10 @@ sja1105_status_t SJA1105_CheckStatusRegisters(sja1105_handle_t *dev) {
         uint32_t vlind    = (reg_data & SJA1105_VLPARIND_MASK) >> SJA1105_VLPARIND_SHIFT;
         uint32_t vlparind = (reg_data & SJA1105_VLIND_SHIFT) >> SJA1105_VLIND_SHIFT;
 
-        /* TODO: remove. virtual links haven't been implemented so this is an error */
         UNUSED(vlind);
         UNUSED(vlparind);
-        dev->events.spi_errors++;
-        return status;
+
+        /* TODO: once virtual links have been implemented */
     }
 
 

@@ -10,16 +10,19 @@
 #include "internal/sja1105_io.h"
 
 
-static sja1105_status_t SJA1105_ReadStatsMAC(sja1105_handle_t *dev, sja1105_stats_mac_level_t *stats) {
+sja1105_status_t SJA1105_ReadStatsMAC(sja1105_handle_t *dev, sja1105_stats_mac_level_t *stats) {
 
     sja1105_status_t status = SJA1105_OK;
     uint32_t         reg_data[SJA1105_MAC_LEVEL_STATS_SIZE * SJA1105_NUM_PORTS];
     uint32_t         counters;
     uint32_t         flags;
 
+    /* Check the device is initialised and take the mutex */
+    SJA1105_LOCK;
+
     /* MAC Level diagnostics */
     status = SJA1105_ReadRegister(dev, SJA1105_REG_MAC_LEVEL_STATS_PORT0, reg_data, SJA1105_MAC_LEVEL_STATS_SIZE * SJA1105_NUM_PORTS);
-    if (status != SJA1105_OK) return status;
+    if (status != SJA1105_OK) goto end;
 
     /* Store the relevent statistics in the output */
     for (uint_fast8_t port = 0; port < SJA1105_NUM_PORTS; port++) {
@@ -57,20 +60,26 @@ static sja1105_status_t SJA1105_ReadStatsMAC(sja1105_handle_t *dev, sja1105_stat
         stats->typeerr[port]       = flags & SJA1105_MAC_LEVEL_STATS_FLAGS_TYPEERR;
     }
 
+    /* Give the mutex and return */
+end:
+    SJA1105_UNLOCK;
     return status;
 }
 
 
-static sja1105_status_t SJA1105_ReadStatsHighLevel(sja1105_handle_t *dev, sja1105_stats_high_level_t *stats, bool part1, bool part2) {
+sja1105_status_t SJA1105_ReadStatsHighLevel(sja1105_handle_t *dev, sja1105_stats_high_level_t *stats, bool part1, bool part2) {
 
     sja1105_status_t status = SJA1105_OK;
     uint32_t         reg_data[MAX(SJA1105_HIGH_LEVEL_STATS1_SIZE * SJA1105_NUM_PORTS,
                                   SJA1105_HIGH_LEVEL_STATS2_SIZE * SJA1105_NUM_PORTS)];
 
+    /* Check the device is initialised and take the mutex */
+    SJA1105_LOCK;
+
     /* Get the statistics part 1 */
     if (part1) {
         status = SJA1105_ReadRegister(dev, SJA1105_REG_HIGH_LEVEL_STATS1_PORT0, reg_data, SJA1105_HIGH_LEVEL_STATS1_SIZE * SJA1105_NUM_PORTS);
-        if (status != SJA1105_OK) return status;
+        if (status != SJA1105_OK) goto end;
 
         /* Store the relevent statistics in the output */
         for (uint_fast8_t port = 0; port < SJA1105_NUM_PORTS; port++) {
@@ -100,7 +109,7 @@ static sja1105_status_t SJA1105_ReadStatsHighLevel(sja1105_handle_t *dev, sja110
     /* Get the statistics part 2 */
     if (part2) {
         status = SJA1105_ReadRegister(dev, SJA1105_REG_HIGH_LEVEL_STATS2_PORT0, reg_data, SJA1105_HIGH_LEVEL_STATS2_SIZE * SJA1105_NUM_PORTS);
-        if (status != SJA1105_OK) return status;
+        if (status != SJA1105_OK) goto end;
 
         /* Store the relevent statistics in the output */
         for (uint_fast8_t port = 0; port < SJA1105_NUM_PORTS; port++) {
@@ -115,18 +124,24 @@ static sja1105_status_t SJA1105_ReadStatsHighLevel(sja1105_handle_t *dev, sja110
         }
     }
 
+    /* Give the mutex and return */
+end:
+    SJA1105_UNLOCK;
     return status;
 }
 
 
-static sja1105_status_t SJA1105_ReadStatsEthernet(sja1105_handle_t *dev, sja1105_stats_ethernet_t *stats) {
+sja1105_status_t SJA1105_ReadStatsEthernet(sja1105_handle_t *dev, sja1105_stats_ethernet_t *stats) {
 
     sja1105_status_t status = SJA1105_OK;
     uint32_t         reg_data[SJA1105_ETHERNET_STATS_SIZE * SJA1105_NUM_PORTS];
 
+    /* Check the device is initialised and take the mutex */
+    SJA1105_LOCK;
+
     /* Get the statistics part */
     status = SJA1105_ReadRegister(dev, SJA1105_REG_ETHERNET_STATS_PORT0, reg_data, SJA1105_ETHERNET_STATS_SIZE * SJA1105_NUM_PORTS);
-    if (status != SJA1105_OK) return status;
+    if (status != SJA1105_OK) goto end;
 
     /* Store the relevent statistics in the output */
     for (uint_fast8_t port = 0; port < SJA1105_NUM_PORTS; port++) {
@@ -139,6 +154,9 @@ static sja1105_status_t SJA1105_ReadStatsEthernet(sja1105_handle_t *dev, sja1105
         stats->dropped_no_learn[port]     = reg_data[SJA1105_ETHERNET_STATS_PORT_OFFSET(port) + SJA1105_ETHERNET_STATS_N_DROPS_NOLEARN];
     }
 
+    /* Give the mutex and return */
+end:
+    SJA1105_UNLOCK;
     return status;
 }
 
