@@ -30,6 +30,7 @@ extern "C" {
 
 /* General */
 #define SJA1105_NUM_PORTS             (5)
+#define SJA1105_MAX_CASC              (5)   /* Maximum number of cascaded switches, can be increased arbitrarily */
 #define SJA1105_NUM_TABLES            (25)
 #define SJA1105_FIXED_BUFFER_SIZE     (274) /* Size of the fixed length table buffer */
 #define SJA1105_NUM_MGMT_SLOTS        (4)
@@ -103,6 +104,7 @@ typedef enum {
     SJA1105_STATIC_CONF_FLAGS_READ_ERROR,
     SJA1105_INVALID_VALUE_ERROR,
     SJA1105_CASC_SYNC_FAILED_ERROR,
+    SJA1105_ID_NOT_FOUND_ERROR,
 } sja1105_status_t;
 
 typedef enum {
@@ -429,10 +431,14 @@ sja1105_status_t SJA1105_ReadStatsEthernet(sja1105_handle_t *dev, sja1105_stats_
 sja1105_status_t SJA1105_ReadStatsSummary(sja1105_handle_t *dev, sja1105_stats_summary_t *stats);
 sja1105_status_t SJA1105_ReadStatsDetailed(sja1105_handle_t *dev, sja1105_stats_detailed_t *stats);
 
+/* Management routes */
+sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint8_t dst_addr[MAC_ADDR_SIZE], uint8_t dst_ports, bool takets, bool tsreg, void *context);
+sja1105_status_t SJA1105_ManagementRouteCreateCasc(sja1105_handle_t *dev, const uint8_t dst_addr[MAC_ADDR_SIZE], uint8_t *dst_ports, uint8_t dst_ports_length, bool takets, bool tsreg, void *context);
+sja1105_status_t SJA1105_ManagementRouteCreateCascSingle(sja1105_handle_t *dev, uint8_t switch_id, uint8_t switch_port, const uint8_t dst_addr[MAC_ADDR_SIZE], bool takets, bool tsreg, void *context);
+sja1105_status_t SJA1105_ManagementRouteFree(sja1105_handle_t *dev, bool force);
+
 /* Utilities */
 sja1105_status_t SJA1105_L2EntryReadByIndex(sja1105_handle_t *dev, uint16_t index, bool managment, uint32_t entry[SJA1105_L2ADDR_LU_ENTRY_SIZE]);
-sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint8_t dst_addr[MAC_ADDR_SIZE], uint8_t dst_ports, bool takets, bool tsreg, void *context);
-sja1105_status_t SJA1105_ManagementRouteFree(sja1105_handle_t *dev, bool force);
 sja1105_status_t SJA1105_FlushTCAM(sja1105_handle_t *dev);
 
 /* TSN */

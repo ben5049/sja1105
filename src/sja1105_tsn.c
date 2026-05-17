@@ -10,6 +10,7 @@
 #include "sja1105.h"
 #include "internal/sja1105_conf.h"
 #include "internal/sja1105_io.h"
+#include "internal/sja1105_utils.h"
 #include "internal/sja1105_regs.h"
 #include "internal/sja1105_tables.h"
 

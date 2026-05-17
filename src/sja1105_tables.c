@@ -14,6 +14,7 @@
 #include "internal/sja1105_regs.h"
 #include "internal/sja1105_conf.h"
 #include "internal/sja1105_io.h"
+#include "internal/sja1105_utils.h"
 
 
 const sja1105_table_type_t SJA1105_TABLE_TYPE_LUT[SJA1105_BLOCK_ID_SGMII_CONF + 1] = {

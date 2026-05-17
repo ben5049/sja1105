@@ -8,6 +8,7 @@
 #include "sja1105.h"
 #include "internal/sja1105_regs.h"
 #include "internal/sja1105_io.h"
+#include "internal/sja1105_utils.h"
 
 
 sja1105_status_t SJA1105_ReadStatsMAC(sja1105_handle_t *dev, sja1105_stats_mac_level_t *stats) {
