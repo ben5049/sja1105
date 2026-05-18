@@ -73,6 +73,7 @@ sja1105_status_t SJA1105_ReadStatsHighLevel(sja1105_handle_t *dev, sja1105_stats
     sja1105_status_t status = SJA1105_OK;
     uint32_t         reg_data[MAX(SJA1105_HIGH_LEVEL_STATS1_SIZE * SJA1105_NUM_PORTS,
                                   SJA1105_HIGH_LEVEL_STATS2_SIZE * SJA1105_NUM_PORTS)];
+    uint32_t         offset;
 
     /* Check the device is initialised and take the mutex */
     SJA1105_LOCK;
@@ -86,24 +87,26 @@ sja1105_status_t SJA1105_ReadStatsHighLevel(sja1105_handle_t *dev, sja1105_stats
         for (uint_fast8_t port = 0; port < SJA1105_NUM_PORTS; port++) {
 
             /* 64-bit counters  */
-            stats->tx_bytes[port]   = reg_data[SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS1_N_TXBYTE_L];
-            stats->tx_bytes[port]  |= (uint64_t) reg_data[SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS1_N_TXBYTE_H] << 32;
-            stats->tx_frames[port]  = reg_data[SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS1_N_TXFRM_L];
-            stats->tx_frames[port] |= (uint64_t) reg_data[SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS1_N_TXFRM_H] << 32;
-            stats->rx_bytes[port]   = reg_data[SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS1_N_RXBYTE_L];
-            stats->rx_bytes[port]  |= (uint64_t) reg_data[SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS1_N_RXBYTE_H] << 32;
-            stats->rx_frames[port]  = reg_data[SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS1_N_RXFRM_L];
-            stats->rx_frames[port] |= (uint64_t) reg_data[SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS1_N_RXFRM_H] << 32;
+            offset                  = SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port);
+            stats->tx_bytes[port]   = reg_data[offset + SJA1105_HIGH_LEVEL_STATS1_N_TXBYTE_L];
+            stats->tx_bytes[port]  |= (uint64_t) reg_data[offset + SJA1105_HIGH_LEVEL_STATS1_N_TXBYTE_H] << 32;
+            stats->tx_frames[port]  = reg_data[offset + SJA1105_HIGH_LEVEL_STATS1_N_TXFRM_L];
+            stats->tx_frames[port] |= (uint64_t) reg_data[offset + SJA1105_HIGH_LEVEL_STATS1_N_TXFRM_H] << 32;
+            stats->rx_bytes[port]   = reg_data[offset + SJA1105_HIGH_LEVEL_STATS1_N_RXBYTE_L];
+            stats->rx_bytes[port]  |= (uint64_t) reg_data[offset + SJA1105_HIGH_LEVEL_STATS1_N_RXBYTE_H] << 32;
+            stats->rx_frames[port]  = reg_data[offset + SJA1105_HIGH_LEVEL_STATS1_N_RXFRM_L];
+            stats->rx_frames[port] |= (uint64_t) reg_data[offset + SJA1105_HIGH_LEVEL_STATS1_N_RXFRM_H] << 32;
 
             /* 32-bit counters */
-            stats->policing_errors[port]          = reg_data[SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS1_N_POLERR];
-            stats->policing_errors_critical[port] = reg_data[SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS1_N_CTPOLERR];
-            stats->virtual_link_not_found[port]   = reg_data[SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS1_N_VNOTFOUND];
-            stats->crc_errors[port]               = reg_data[SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS1_N_CRCERR];
-            stats->size_errors[port]              = reg_data[SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS1_N_SIZEERR];
-            stats->unreleased_errors[port]        = reg_data[SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS1_N_UNRELEASED];
-            stats->vlan_errors[port]              = reg_data[SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS1_N_VLANERR];
-            stats->non_664_errors[port]           = reg_data[SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS1_N_N664ERR];
+            offset                                = SJA1105_HIGH_LEVEL_STATS1_PORT_OFFSET(port);
+            stats->policing_errors[port]          = reg_data[offset + SJA1105_HIGH_LEVEL_STATS1_N_POLERR];
+            stats->policing_errors_critical[port] = reg_data[offset + SJA1105_HIGH_LEVEL_STATS1_N_CTPOLERR];
+            stats->virtual_link_not_found[port]   = reg_data[offset + SJA1105_HIGH_LEVEL_STATS1_N_VNOTFOUND];
+            stats->crc_errors[port]               = reg_data[offset + SJA1105_HIGH_LEVEL_STATS1_N_CRCERR];
+            stats->size_errors[port]              = reg_data[offset + SJA1105_HIGH_LEVEL_STATS1_N_SIZEERR];
+            stats->unreleased_errors[port]        = reg_data[offset + SJA1105_HIGH_LEVEL_STATS1_N_UNRELEASED];
+            stats->vlan_errors[port]              = reg_data[offset + SJA1105_HIGH_LEVEL_STATS1_N_VLANERR];
+            stats->non_664_errors[port]           = reg_data[offset + SJA1105_HIGH_LEVEL_STATS1_N_N664ERR];
         }
     }
 
@@ -118,10 +121,11 @@ sja1105_status_t SJA1105_ReadStatsHighLevel(sja1105_handle_t *dev, sja1105_stats
             /* TODO: Queue watermarks */
 
             /* 32-bit counters */
-            stats->not_reachable[port]   = reg_data[SJA1105_HIGH_LEVEL_STATS2_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS2_N_NOT_REACH];
-            stats->egress_disabled[port] = reg_data[SJA1105_HIGH_LEVEL_STATS2_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS2_N_EGR_DISABLED];
-            stats->partition_drop[port]  = reg_data[SJA1105_HIGH_LEVEL_STATS2_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS2_N_PART_DROP];
-            stats->queue_full[port]      = reg_data[SJA1105_HIGH_LEVEL_STATS2_PORT_OFFSET(port) + SJA1105_HIGH_LEVEL_STATS2_N_QFULL];
+            offset                       = SJA1105_HIGH_LEVEL_STATS2_PORT_OFFSET(port);
+            stats->not_reachable[port]   = reg_data[offset + SJA1105_HIGH_LEVEL_STATS2_N_NOT_REACH];
+            stats->egress_disabled[port] = reg_data[offset + SJA1105_HIGH_LEVEL_STATS2_N_EGR_DISABLED];
+            stats->partition_drop[port]  = reg_data[offset + SJA1105_HIGH_LEVEL_STATS2_N_PART_DROP];
+            stats->queue_full[port]      = reg_data[offset + SJA1105_HIGH_LEVEL_STATS2_N_QFULL];
         }
     }
 
@@ -136,6 +140,7 @@ sja1105_status_t SJA1105_ReadStatsEthernet(sja1105_handle_t *dev, sja1105_stats_
 
     sja1105_status_t status = SJA1105_OK;
     uint32_t         reg_data[SJA1105_ETHERNET_STATS_SIZE * SJA1105_NUM_PORTS];
+    uint32_t         offset;
 
     /* Check the device is initialised and take the mutex */
     SJA1105_LOCK;
@@ -146,13 +151,14 @@ sja1105_status_t SJA1105_ReadStatsEthernet(sja1105_handle_t *dev, sja1105_stats_
 
     /* Store the relevent statistics in the output */
     for (uint_fast8_t port = 0; port < SJA1105_NUM_PORTS; port++) {
-        stats->dropped_utag[port]         = reg_data[SJA1105_ETHERNET_STATS_PORT_OFFSET(port) + SJA1105_ETHERNET_STATS_N_DROPS_UTAG];
-        stats->dropped_sitag[port]        = reg_data[SJA1105_ETHERNET_STATS_PORT_OFFSET(port) + SJA1105_ETHERNET_STATS_N_DROPS_SITAG];
-        stats->dropped_sotag[port]        = reg_data[SJA1105_ETHERNET_STATS_PORT_OFFSET(port) + SJA1105_ETHERNET_STATS_N_DROPS_SOTAG];
-        stats->dropped_dtag[port]         = reg_data[SJA1105_ETHERNET_STATS_PORT_OFFSET(port) + SJA1105_ETHERNET_STATS_N_DROPS_DTAG];
-        stats->dropped_illegal_dtag[port] = reg_data[SJA1105_ETHERNET_STATS_PORT_OFFSET(port) + SJA1105_ETHERNET_STATS_N_DROPS_ILL_DTAG];
-        stats->dropped_empty_route[port]  = reg_data[SJA1105_ETHERNET_STATS_PORT_OFFSET(port) + SJA1105_ETHERNET_STATS_N_DROPS_EMPTY_ROUTE];
-        stats->dropped_no_learn[port]     = reg_data[SJA1105_ETHERNET_STATS_PORT_OFFSET(port) + SJA1105_ETHERNET_STATS_N_DROPS_NOLEARN];
+        offset                            = SJA1105_ETHERNET_STATS_PORT_OFFSET(port);
+        stats->dropped_utag[port]         = reg_data[offset + SJA1105_ETHERNET_STATS_N_DROPS_UTAG];
+        stats->dropped_sitag[port]        = reg_data[offset + SJA1105_ETHERNET_STATS_N_DROPS_SITAG];
+        stats->dropped_sotag[port]        = reg_data[offset + SJA1105_ETHERNET_STATS_N_DROPS_SOTAG];
+        stats->dropped_dtag[port]         = reg_data[offset + SJA1105_ETHERNET_STATS_N_DROPS_DTAG];
+        stats->dropped_illegal_dtag[port] = reg_data[offset + SJA1105_ETHERNET_STATS_N_DROPS_ILL_DTAG];
+        stats->dropped_empty_route[port]  = reg_data[offset + SJA1105_ETHERNET_STATS_N_DROPS_EMPTY_ROUTE];
+        stats->dropped_no_learn[port]     = reg_data[offset + SJA1105_ETHERNET_STATS_N_DROPS_NOLEARN];
     }
 
     /* Give the mutex and return */

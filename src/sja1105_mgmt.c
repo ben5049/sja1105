@@ -18,7 +18,7 @@
 
 
 /* Create a management route in a single switch */
-sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint8_t dst_addr[MAC_ADDR_SIZE], uint8_t dst_ports, bool takets, bool tsreg, void *context) {
+sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint8_t dst_addr[MAC_ADDR_SIZE], uint8_t dst_ports, bool takets, uint8_t tsreg, sja1105_mgmt_route_free_callback_t free_callback, void *callback_context) {
 
     sja1105_status_t status = SJA1105_OK;
 
@@ -43,7 +43,7 @@ sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint
         }
     }
 
-    /* No free slots: attempt free any slots that have been used up and try again */
+    /* No free slots: attempt to free any slots that have been used up and try again */
     if (free_entry == SJA1105_NUM_MGMT_SLOTS) {
 
         status = SJA1105_ManagementRouteFree(dev, false);
@@ -63,6 +63,13 @@ sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint
             if (current_time - dev->management_routes.timestamps[i] > dev->config->mgmt_timeout) {
                 dev->management_routes.slot_taken[i] = false;
                 dev->events.mgmt_entries_dropped++;
+
+                /* Call the user callback */
+                if (dev->management_routes.callbacks[i] != NULL) {
+                    status = dev->management_routes.callbacks[i](SJA1105_MGMT_FREE_TIMEOUT, dev->management_routes.contexts[i]);
+                    if (status != SJA1105_OK) goto end;
+                }
+
                 free_entry = i;
                 break;
             }
@@ -83,14 +90,26 @@ sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint
     if (tsreg) lut_entry[SJA1105_MGMT_TSREG_OFFSET] |= SJA1105_MGMT_TSREG_MASK;
 
     /* Copy the destination MAC address into ENTRY[69:22] */
-    lut_entry[0] |= ((uint32_t) dst_addr[0]) << 22; /* [29:22] */
-    lut_entry[0] |= ((uint32_t) dst_addr[1]) << 30; /* [31:30] */
-    lut_entry[1] |= ((uint32_t) dst_addr[1]) >> 2;  /* [37:32] */
-    lut_entry[1] |= ((uint32_t) dst_addr[2]) << 6;  /* [45:38] */
-    lut_entry[1] |= ((uint32_t) dst_addr[3]) << 14; /* [53:46] */
-    lut_entry[1] |= ((uint32_t) dst_addr[4]) << 22; /* [61:54] */
-    lut_entry[1] |= ((uint32_t) dst_addr[5]) << 30; /* [63:62] */
-    lut_entry[2] |= ((uint32_t) dst_addr[5]) >> 2;  /* [69:64] */
+
+    /* dst_addr[5] is MAC[7:0] -> maps to bits [29:22] */
+    lut_entry[0] |= ((uint32_t) dst_addr[5]) << 22;
+
+    /* dst_addr[4] is MAC[15:8] -> maps to bits [37:30] */
+    lut_entry[0] |= ((uint32_t) dst_addr[4]) << 30; /* bits [31:30] */
+    lut_entry[1] |= ((uint32_t) dst_addr[4]) >> 2;  /* bits [37:32] */
+
+    /* dst_addr[3] is MAC[23:16] -> maps to bits [45:38] */
+    lut_entry[1] |= ((uint32_t) dst_addr[3]) << 6;
+
+    /* dst_addr[2] is MAC[31:24] -> maps to bits [53:46] */
+    lut_entry[1] |= ((uint32_t) dst_addr[2]) << 14;
+
+    /* dst_addr[1] is MAC[39:32] -> maps to bits [61:54] */
+    lut_entry[1] |= ((uint32_t) dst_addr[1]) << 22;
+
+    /* dst_addr[0] is MAC[47:40] -> maps to bits [69:62] */
+    lut_entry[1] |= ((uint32_t) dst_addr[0]) << 30; /* bits [63:62] */
+    lut_entry[2] |= ((uint32_t) dst_addr[0]) >> 2;  /* bits [69:64] */
 
     /* Wait for VALID to be 0. */
     status = SJA1105_PollFlag(dev, SJA1105_DYN_CONF_L2_LUT_REG_0, SJA1105_DYN_CONF_L2_LUT_VALID, false);
@@ -117,7 +136,8 @@ sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint
     /* Update the device struct */
     dev->management_routes.slot_taken[free_entry] = true;
     dev->management_routes.timestamps[free_entry] = current_time;
-    dev->management_routes.contexts[free_entry]   = context;
+    dev->management_routes.callbacks[free_entry]  = free_callback;
+    dev->management_routes.contexts[free_entry]   = callback_context;
 
 end:
 
@@ -128,7 +148,7 @@ end:
 
 
 /* Create management routes across a complex of switches */
-sja1105_status_t SJA1105_ManagementRouteCreateCasc(sja1105_handle_t *dev, const uint8_t dst_addr[MAC_ADDR_SIZE], uint8_t *dst_ports, uint8_t dst_ports_length, bool takets, bool tsreg, void *context) {
+sja1105_status_t SJA1105_ManagementRouteCreateCasc(sja1105_handle_t *dev, const uint8_t dst_addr[MAC_ADDR_SIZE], uint8_t *dst_ports, uint8_t dst_ports_length, bool takets, uint8_t tsreg, sja1105_mgmt_route_free_callback_t free_callback, void *callback_context) {
 
     sja1105_status_t  status      = SJA1105_OK;
     uint8_t           dev_index   = 0;
@@ -142,7 +162,7 @@ sja1105_status_t SJA1105_ManagementRouteCreateCasc(sja1105_handle_t *dev, const 
     do {
 
         /* Create the management route in the current switch */
-        status = SJA1105_ManagementRouteCreate(dev_current, dst_addr, dst_ports[dev_index], takets, tsreg, context);
+        status = SJA1105_ManagementRouteCreate(dev_current, dst_addr, dst_ports[dev_index], takets, tsreg, free_callback, callback_context);
         if (status != SJA1105_OK) return status;
 
         /* The management route doesn't extend to the next switch */
@@ -160,7 +180,7 @@ sja1105_status_t SJA1105_ManagementRouteCreateCasc(sja1105_handle_t *dev, const 
 
 /* Create a management route across a complex of switches for a single exit port.
  * The dev argument should be the handle of the switch connected to the host. */
-sja1105_status_t SJA1105_ManagementRouteCreateCascSingle(sja1105_handle_t *dev, uint8_t switch_id, uint8_t switch_port, const uint8_t dst_addr[MAC_ADDR_SIZE], bool takets, bool tsreg, void *context) {
+sja1105_status_t SJA1105_ManagementRouteCreateCascSingle(sja1105_handle_t *dev, uint8_t switch_id, uint8_t switch_port, const uint8_t dst_addr[MAC_ADDR_SIZE], bool takets, uint8_t tsreg, uint8_t *depth, sja1105_mgmt_route_free_callback_t free_callback, void *callback_context) {
 
     sja1105_status_t  status      = SJA1105_OK;
     sja1105_handle_t *dev_current = dev;
@@ -171,8 +191,10 @@ sja1105_status_t SJA1105_ManagementRouteCreateCascSingle(sja1105_handle_t *dev, 
         /* Found the target switch */
         if (dev_current->config->switch_id == switch_id) {
             dst_ports[i] = 1 << switch_port;
-            status       = SJA1105_ManagementRouteCreateCasc(dev, dst_addr, dst_ports, i + 1, takets, tsreg, context);
+            status       = SJA1105_ManagementRouteCreateCasc(dev, dst_addr, dst_ports, i + 1, takets, tsreg, free_callback, callback_context);
             if (status != SJA1105_OK) return status;
+
+            if (depth != NULL) *depth = i + 1;
             break;
         }
 
@@ -223,12 +245,24 @@ sja1105_status_t SJA1105_ManagementRouteFree(sja1105_handle_t *dev, bool force) 
             if (!(entry[SJA1105_MGMT_MGMTVALID_OFFSET] & SJA1105_MGMT_MGMTVALID_MASK)) {
                 dev->events.mgmt_frames_sent++;
                 dev->management_routes.slot_taken[i] = false;
+
+                /* Call the user callback */
+                if (dev->management_routes.callbacks[i] != NULL) {
+                    status = dev->management_routes.callbacks[i](SJA1105_MGMT_FREE_USED, dev->management_routes.contexts[i]);
+                    if (status != SJA1105_OK) goto end;
+                }
             }
 
             /* If force is true then free the entry anyway */
             else if (force) {
                 dev->management_routes.slot_taken[i] = false;
                 dev->events.mgmt_entries_dropped++;
+
+                /* Call the user callback */
+                if (dev->management_routes.callbacks[i] != NULL) {
+                    status = dev->management_routes.callbacks[i](SJA1105_MGMT_FREE_FORCED, dev->management_routes.contexts[i]);
+                    if (status != SJA1105_OK) goto end;
+                }
             }
         }
     }
@@ -237,5 +271,30 @@ end:
 
     /* Give the mutex and return */
     SJA1105_UNLOCK;
+    return status;
+}
+
+
+sja1105_status_t SJA1105_ManagementRouteFreeCasc(sja1105_handle_t *dev, bool force, uint8_t depth) {
+
+    sja1105_status_t  status      = SJA1105_OK;
+    sja1105_handle_t *dev_current = dev;
+
+    /* Check parameters */
+    if (depth == 0) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
+
+    /* Iterate through switches */
+    for (uint_fast8_t i = 0; i < MIN(depth, SJA1105_MAX_CASC); i++) {
+
+        /* Free the management routes in the current switch */
+        status = SJA1105_ManagementRouteFree(dev_current, force);
+        if (status != SJA1105_OK) return status;
+
+        /* Get the next switch handle */
+        dev_current = SJA1105_GetCasc(dev_current);
+        if (dev_current == NULL) break;
+    }
+
     return status;
 }

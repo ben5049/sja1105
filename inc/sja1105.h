@@ -30,7 +30,6 @@ extern "C" {
 
 /* General */
 #define SJA1105_NUM_PORTS             (5)
-#define SJA1105_MAX_CASC              (5)   /* Maximum number of cascaded switches, can be increased arbitrarily */
 #define SJA1105_NUM_TABLES            (25)
 #define SJA1105_FIXED_BUFFER_SIZE     (274) /* Size of the fixed length table buffer */
 #define SJA1105_NUM_MGMT_SLOTS        (4)
@@ -70,6 +69,10 @@ extern "C" {
 #define SJA1105_CHECKS_ENABLED (1)
 #endif
 
+/* Maximum number of cascaded switches */
+#ifndef SJA1105_MAX_CASC
+#define SJA1105_MAX_CASC (5)
+#endif
 
 /* Typedefs */
 
@@ -267,11 +270,21 @@ typedef struct {
     uint32_t frames_dropped[SJA1105_NUM_PORTS];
 } sja1105_event_counters_t;
 
+typedef enum {
+    SJA1105_MGMT_FREE_USED,
+    SJA1105_MGMT_FREE_TIMEOUT,
+    SJA1105_MGMT_FREE_FORCED,
+} sja1105_mgmt_free_t;
+
+/* Set per management route */
+typedef sja1105_status_t (*sja1105_mgmt_route_free_callback_t)(sja1105_mgmt_free_t reason, void *context);
+
 /* Stores information about management routes */
 typedef struct {
-    bool     slot_taken[SJA1105_NUM_MGMT_SLOTS]; /* true = slot has been taken */
-    uint32_t timestamps[SJA1105_NUM_MGMT_SLOTS]; /* Time when route was created, used to evict old rules (TODO) */
-    void    *contexts[SJA1105_NUM_MGMT_SLOTS];   /* Context set by SJA1105_ManagementRouteCreate() caller so they can tell if their entry has been evicted. */
+    bool                               slot_taken[SJA1105_NUM_MGMT_SLOTS]; /* true = slot has been taken */
+    uint32_t                           timestamps[SJA1105_NUM_MGMT_SLOTS]; /* Time when route was created, used to evict old rules (TODO) */
+    sja1105_mgmt_route_free_callback_t callbacks[SJA1105_NUM_MGMT_SLOTS];  /* Function to call when route freed */
+    void                              *contexts[SJA1105_NUM_MGMT_SLOTS];   /* Context set by SJA1105_ManagementRouteCreate() caller so they can tell if their entry has been evicted. */
 } sja1105_mgmt_routes_t;
 
 typedef void (*sja1105_callback_write_cs_pin_t)(sja1105_pinstate_t state, void *context);
@@ -432,10 +445,11 @@ sja1105_status_t SJA1105_ReadStatsSummary(sja1105_handle_t *dev, sja1105_stats_s
 sja1105_status_t SJA1105_ReadStatsDetailed(sja1105_handle_t *dev, sja1105_stats_detailed_t *stats);
 
 /* Management routes */
-sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint8_t dst_addr[MAC_ADDR_SIZE], uint8_t dst_ports, bool takets, bool tsreg, void *context);
-sja1105_status_t SJA1105_ManagementRouteCreateCasc(sja1105_handle_t *dev, const uint8_t dst_addr[MAC_ADDR_SIZE], uint8_t *dst_ports, uint8_t dst_ports_length, bool takets, bool tsreg, void *context);
-sja1105_status_t SJA1105_ManagementRouteCreateCascSingle(sja1105_handle_t *dev, uint8_t switch_id, uint8_t switch_port, const uint8_t dst_addr[MAC_ADDR_SIZE], bool takets, bool tsreg, void *context);
+sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint8_t dst_addr[MAC_ADDR_SIZE], uint8_t dst_ports, bool takets, uint8_t tsreg, sja1105_mgmt_route_free_callback_t free_callback, void *callback_context);
+sja1105_status_t SJA1105_ManagementRouteCreateCasc(sja1105_handle_t *dev, const uint8_t dst_addr[MAC_ADDR_SIZE], uint8_t *dst_ports, uint8_t dst_ports_length, bool takets, uint8_t tsreg, sja1105_mgmt_route_free_callback_t free_callback, void *callback_context);
+sja1105_status_t SJA1105_ManagementRouteCreateCascSingle(sja1105_handle_t *dev, uint8_t switch_id, uint8_t switch_port, const uint8_t dst_addr[MAC_ADDR_SIZE], bool takets, uint8_t tsreg, uint8_t *depth, sja1105_mgmt_route_free_callback_t free_callback, void *callback_context);
 sja1105_status_t SJA1105_ManagementRouteFree(sja1105_handle_t *dev, bool force);
+sja1105_status_t SJA1105_ManagementRouteFreeCasc(sja1105_handle_t *dev, bool force, uint8_t depth);
 
 /* Utilities */
 sja1105_status_t SJA1105_L2EntryReadByIndex(sja1105_handle_t *dev, uint16_t index, bool managment, uint32_t entry[SJA1105_L2ADDR_LU_ENTRY_SIZE]);
