@@ -36,6 +36,7 @@ extern "C" {
 #define SJA1105_MAX_ATTEMPTS          (10)  /* Maximum number of attempts to try anything. E.g. polling a flag with timeout = 100ms will result in 10 reads 10ms apart. Must be > 0 */
 #define SJA1105_L2ADDR_LU_ENTRY_SIZE  (5)
 #define SJA1105_L2ADDR_LU_NUM_ENTRIES (1024)
+#define SJA1105_NO_TIMESTAMP          (0ULL)
 
 /* Timings */
 #define SJA1105_T_RST            (5000)   /* Reset pin pulse width 5000ns (5us) */
@@ -276,8 +277,10 @@ typedef enum {
     SJA1105_MGMT_FREE_FORCED,
 } sja1105_mgmt_free_t;
 
-/* Set per management route */
-typedef sja1105_status_t (*sja1105_mgmt_route_free_callback_t)(sja1105_mgmt_free_t reason, void *context);
+/* Set per management route. If TAKETS was set for this management route then a
+ * timestamp should be taken withing 134ms with SJA1105_GetEgressTimestamp(),
+ * ideally inside this callback. */
+typedef sja1105_status_t (*sja1105_mgmt_route_free_callback_t)(sja1105_handle_t *dev, sja1105_mgmt_free_t reason, void *context);
 
 /* Stores information about management routes */
 typedef struct {
@@ -457,6 +460,8 @@ sja1105_status_t SJA1105_FlushTCAM(sja1105_handle_t *dev);
 
 /* TSN */
 sja1105_status_t SJA1105_SyncTimestamps(sja1105_handle_t *dev_a, sja1105_handle_t *dev_b);
+sja1105_status_t SJA1105_GetCurrentTime(sja1105_handle_t *dev, uint64_t *timestamp);
+sja1105_status_t SJA1105_GetEgressTimestamp(sja1105_handle_t *dev, uint8_t port, uint8_t tsreg, uint64_t *timestamp);
 
 
 #ifdef __cplusplus

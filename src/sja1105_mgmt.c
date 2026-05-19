@@ -66,7 +66,7 @@ sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint
 
                 /* Call the user callback */
                 if (dev->management_routes.callbacks[i] != NULL) {
-                    status = dev->management_routes.callbacks[i](SJA1105_MGMT_FREE_TIMEOUT, dev->management_routes.contexts[i]);
+                    status = dev->management_routes.callbacks[i](dev, SJA1105_MGMT_FREE_TIMEOUT, dev->management_routes.contexts[i]);
                     if (status != SJA1105_OK) goto end;
                 }
 
@@ -153,6 +153,7 @@ sja1105_status_t SJA1105_ManagementRouteCreateCasc(sja1105_handle_t *dev, const 
     sja1105_status_t  status      = SJA1105_OK;
     uint8_t           dev_index   = 0;
     sja1105_handle_t *dev_current = dev;
+    bool              non_casc_port;
 
     /* Check the parameters */
     if (dst_ports == NULL || dst_ports_length == 0) status = SJA1105_PARAMETER_ERROR;
@@ -161,8 +162,17 @@ sja1105_status_t SJA1105_ManagementRouteCreateCasc(sja1105_handle_t *dev, const 
     /* Create routes */
     do {
 
-        /* Create the management route in the current switch */
-        status = SJA1105_ManagementRouteCreate(dev_current, dst_addr, dst_ports[dev_index], takets, tsreg, free_callback, callback_context);
+        /* Create the management route in the current switch.
+         * Only take a timestamp if sending from non CASC port */
+        non_casc_port = (bool) (dst_ports[dev_index] & ~(1 << dev->config->casc_port));
+        status        = SJA1105_ManagementRouteCreate(
+            dev_current,
+            dst_addr,
+            dst_ports[dev_index],
+            non_casc_port ? takets : false,
+            non_casc_port ? tsreg : 0,
+            free_callback,
+            callback_context);
         if (status != SJA1105_OK) return status;
 
         /* The management route doesn't extend to the next switch */
@@ -248,7 +258,7 @@ sja1105_status_t SJA1105_ManagementRouteFree(sja1105_handle_t *dev, bool force) 
 
                 /* Call the user callback */
                 if (dev->management_routes.callbacks[i] != NULL) {
-                    status = dev->management_routes.callbacks[i](SJA1105_MGMT_FREE_USED, dev->management_routes.contexts[i]);
+                    status = dev->management_routes.callbacks[i](dev, SJA1105_MGMT_FREE_USED, dev->management_routes.contexts[i]);
                     if (status != SJA1105_OK) goto end;
                 }
             }
@@ -260,7 +270,7 @@ sja1105_status_t SJA1105_ManagementRouteFree(sja1105_handle_t *dev, bool force) 
 
                 /* Call the user callback */
                 if (dev->management_routes.callbacks[i] != NULL) {
-                    status = dev->management_routes.callbacks[i](SJA1105_MGMT_FREE_FORCED, dev->management_routes.contexts[i]);
+                    status = dev->management_routes.callbacks[i](dev, SJA1105_MGMT_FREE_FORCED, dev->management_routes.contexts[i]);
                     if (status != SJA1105_OK) goto end;
                 }
             }

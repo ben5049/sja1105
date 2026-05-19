@@ -192,3 +192,82 @@ release_a:
 
     return status;
 }
+
+
+/* Read the rate correct timestamp register. Note the timestamp is in intervals of 8ns */
+sja1105_status_t SJA1105_GetCurrentTime(sja1105_handle_t *dev, uint64_t *timestamp) {
+
+    sja1105_status_t status = SJA1105_OK;
+    uint32_t         reg_data[2];
+
+#if SJA1105_CHECKS_ENABLED
+    if (timestamp == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
+#endif
+
+    /* Check the device is initialised and take the mutex */
+    SJA1105_LOCK;
+
+    /* Read the timestamp register */
+    status = SJA1105_ReadRegister(dev, SJA1105_CTRL_AREA_PTP_REG_7, reg_data, 2);
+    if (status != SJA1105_OK) goto end;
+
+    /* Store the timestamp */
+    *timestamp  = reg_data[0];
+    *timestamp |= (uint64_t) reg_data[1] << 32;
+
+end:
+
+    /* Give the mutex and return */
+    SJA1105_UNLOCK;
+    return status;
+}
+
+
+sja1105_status_t SJA1105_GetEgressTimestamp(sja1105_handle_t *dev, uint8_t port, uint8_t tsreg, uint64_t *timestamp) {
+
+    sja1105_status_t status = SJA1105_OK;
+    uint32_t         reg_data[2];
+    uint64_t         current_time;
+    uint64_t         reconstructed_timestamp = 0;
+
+#if SJA1105_CHECKS_ENABLED
+    if (port >= SJA1105_NUM_PORTS) status = SJA1105_PARAMETER_ERROR;
+    if (tsreg > 1) status = SJA1105_PARAMETER_ERROR;
+    if (timestamp == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
+#endif
+
+    /* Check the device is initialised and take the mutex */
+    SJA1105_LOCK;
+
+    /* Read the current time first because it is always changing */
+    status = SJA1105_GetCurrentTime(dev, &current_time);
+    if (status != SJA1105_OK) goto end;
+
+    /* Read the egress timestamp register second because it is static */
+    status = SJA1105_ReadRegister(dev, SJA1105_REG_PTP_EGR_TS_UPDATE_0 + (2 * port) + tsreg, reg_data, 2);
+    if (status != SJA1105_OK) goto end;
+
+    /* Check for an update */
+    if (!(reg_data[0] & SJA1105_PTP_EGR_TS_UPDATE)) {
+        *timestamp = SJA1105_NO_TIMESTAMP;
+        goto end;
+    }
+
+    /* Reconstruct the egress timestamp */
+    reconstructed_timestamp = (current_time & ~SJA1105_PTP_EGR_TS_MASK_64) | (reg_data[1] & SJA1105_PTP_EGR_TS_MASK_32);
+
+    /* Handle the wrap around */
+    if (reconstructed_timestamp > current_time) {
+        reconstructed_timestamp -= (1ULL << 24);
+    }
+
+    *timestamp = reconstructed_timestamp;
+
+end:
+
+    /* Give the mutex and return */
+    SJA1105_UNLOCK;
+    return status;
+}
