@@ -246,7 +246,7 @@ sja1105_status_t SJA1105_GetEgressTimestamp(sja1105_handle_t *dev, uint8_t port,
     if (status != SJA1105_OK) goto end;
 
     /* Read the egress timestamp register second because it is static */
-    status = SJA1105_ReadRegister(dev, SJA1105_REG_PTP_EGR_TS_UPDATE_0 + (2 * port) + tsreg, reg_data, 2);
+    status = SJA1105_ReadRegister(dev, SJA1105_REG_PTP_EGR_TS_UPDATE_0 + 2 * ((2 * port) + tsreg), reg_data, 2);
     if (status != SJA1105_OK) goto end;
 
     /* Check for an update */

@@ -164,7 +164,7 @@ sja1105_status_t SJA1105_ManagementRouteCreateCasc(sja1105_handle_t *dev, const 
 
         /* Create the management route in the current switch.
          * Only take a timestamp if sending from non CASC port */
-        non_casc_port = (bool) (dst_ports[dev_index] & ~(1 << dev->config->casc_port));
+        non_casc_port = (bool) (dst_ports[dev_index] & ~(1 << dev_current->config->casc_port));
         status        = SJA1105_ManagementRouteCreate(
             dev_current,
             dst_addr,
