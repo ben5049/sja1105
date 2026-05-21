@@ -111,9 +111,16 @@ enum SJA1105_DeviceID_Enum {
 #define SJA1105_FWDS_PARTS_PORT_SHIFT                      (8)
 #define SJA1105_FWDS_PARTS_PORT_MASK                       (0xff << SJA1105_FWDS_PARTS_PORT_SHIFT)
 
+#define SJA1105_PTP_EGR_TS_REG_SIZE                        (2) /* One word for timestamp, one for update */
+#define SJA1105_PTP_EGR_TS_REG_OFFSET(port, tsreg)         (SJA1105_REG_PTP_EGR_TS_UPDATE_0 + (SJA1105_PTP_EGR_TS_REG_SIZE * ((2 * (port)) + (tsreg))))
 #define SJA1105_PTP_EGR_TS_UPDATE                          (1 << 0)
+#define SJA1105_PTP_EGR_TS_BITS                            (24)
 #define SJA1105_PTP_EGR_TS_MASK_32                         (0x00ffffffUL)
-#define SJA1105_PTP_EGR_TS_MASK_64                         (0x0000000000ffffffULL)
+#define SJA1105_PTP_EGR_TS_MASK_64                         (0x00ffffffULL)
+
+#define SJA1105_PTP_ING_TS_BITS                            (32)
+#define SJA1105_PTP_ING_TS_MASK_32                         (0xffffffffUL)
+#define SJA1105_PTP_ING_TS_MASK_64                         (0xffffffffULL)
 
 #define SJA1105_MAC_LEVEL_STATS_SIZE                       (SJA1105_REG_MAC_LEVEL_STATS_PORT1 - SJA1105_REG_MAC_LEVEL_STATS_PORT0)
 #define SJA1105_MAC_LEVEL_STATS_COUNTERS_PORT_OFFSET(port) ((port) * SJA1105_MAC_LEVEL_STATS_SIZE)

@@ -150,10 +150,9 @@ end:
 /* Create management routes across a complex of switches */
 sja1105_status_t SJA1105_ManagementRouteCreateCasc(sja1105_handle_t *dev, const uint8_t dst_addr[MAC_ADDR_SIZE], uint8_t *dst_ports, uint8_t dst_ports_length, bool takets, uint8_t tsreg, sja1105_mgmt_route_free_callback_t free_callback, void *callback_context) {
 
-    sja1105_status_t  status      = SJA1105_OK;
-    uint8_t           dev_index   = 0;
-    sja1105_handle_t *dev_current = dev;
-    bool              non_casc_port;
+    sja1105_status_t status    = SJA1105_OK;
+    uint8_t          dev_index = 0;
+    bool             non_casc_port;
 
     /* Check the parameters */
     if (dst_ports == NULL || dst_ports_length == 0) status = SJA1105_PARAMETER_ERROR;
@@ -164,9 +163,9 @@ sja1105_status_t SJA1105_ManagementRouteCreateCasc(sja1105_handle_t *dev, const 
 
         /* Create the management route in the current switch.
          * Only take a timestamp if sending from non CASC port */
-        non_casc_port = (bool) (dst_ports[dev_index] & ~(1 << dev_current->config->casc_port));
+        non_casc_port = (bool) (dst_ports[dev_index] & ~(1 << dev->config->casc_port));
         status        = SJA1105_ManagementRouteCreate(
-            dev_current,
+            dev,
             dst_addr,
             dst_ports[dev_index],
             non_casc_port ? takets : false,
@@ -176,13 +175,13 @@ sja1105_status_t SJA1105_ManagementRouteCreateCasc(sja1105_handle_t *dev, const 
         if (status != SJA1105_OK) return status;
 
         /* The management route doesn't extend to the next switch */
-        if (!(dst_ports[dev_index] & (1 << dev_current->config->casc_port))) break;
+        if (!(dst_ports[dev_index] & (1 << dev->config->casc_port))) break;
 
         /* Get the next switch */
-        dev_current = SJA1105_GetCasc(dev_current);
+        dev = SJA1105_GetCasc(dev);
         dev_index++;
 
-    } while ((dev_index < dst_ports_length) && (dev_current != NULL));
+    } while ((dev_index < dst_ports_length) && (dev != NULL));
 
     return status;
 }
@@ -305,6 +304,20 @@ sja1105_status_t SJA1105_ManagementRouteFreeCasc(sja1105_handle_t *dev, bool for
         dev_current = SJA1105_GetCasc(dev_current);
         if (dev_current == NULL) break;
     }
+
+    return status;
+}
+
+
+sja1105_status_t SJA1105_ParseMETAFrame(uint8_t *payload, uint8_t *switch_id, uint8_t *src_port, uint32_t *partial_timestamp) {
+
+    sja1105_status_t status = SJA1105_NOT_IMPLEMENTED_ERROR;
+
+#if SJA1105_CHECKS_ENABLED
+    if (payload == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
+#endif
+
 
     return status;
 }

@@ -453,6 +453,7 @@ sja1105_status_t SJA1105_ManagementRouteCreateCasc(sja1105_handle_t *dev, const 
 sja1105_status_t SJA1105_ManagementRouteCreateCascSingle(sja1105_handle_t *dev, uint8_t switch_id, uint8_t switch_port, const uint8_t dst_addr[MAC_ADDR_SIZE], bool takets, uint8_t tsreg, uint8_t *depth, sja1105_mgmt_route_free_callback_t free_callback, void *callback_context);
 sja1105_status_t SJA1105_ManagementRouteFree(sja1105_handle_t *dev, bool force);
 sja1105_status_t SJA1105_ManagementRouteFreeCasc(sja1105_handle_t *dev, bool force, uint8_t depth);
+sja1105_status_t SJA1105_ParseMETAFrame(uint8_t *payload, uint8_t *switch_id, uint8_t *src_port, uint32_t *partial_timestamp);
 
 /* Utilities */
 sja1105_status_t SJA1105_L2EntryReadByIndex(sja1105_handle_t *dev, uint16_t index, bool managment, uint32_t entry[SJA1105_L2ADDR_LU_ENTRY_SIZE]);
@@ -462,6 +463,7 @@ sja1105_status_t SJA1105_FlushTCAM(sja1105_handle_t *dev);
 sja1105_status_t SJA1105_SyncTimestamps(sja1105_handle_t *dev_a, sja1105_handle_t *dev_b);
 sja1105_status_t SJA1105_GetCurrentTime(sja1105_handle_t *dev, uint64_t *timestamp);
 sja1105_status_t SJA1105_GetEgressTimestamp(sja1105_handle_t *dev, uint8_t port, uint8_t tsreg, uint64_t *timestamp);
+sja1105_status_t SJA1105_GetIngressTimestamp(sja1105_handle_t *dev, uint8_t *payload, uint8_t *switch_id, uint8_t *src_port, uint64_t *timestamp);
 
 
 #ifdef __cplusplus

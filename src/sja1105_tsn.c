@@ -107,7 +107,9 @@ sja1105_status_t SJA1105_InitTSN(sja1105_handle_t *dev) {
 }
 
 
-/* This shouldn't be called while there is traffic or it may corrupt timestamps */
+/* This shouldn't be called while there is traffic or it may corrupt timestamps.
+ * Note: This function requires two SJA1105 to have their PTP_TS pins physically
+ *       connected. */
 sja1105_status_t SJA1105_SyncTimestamps(sja1105_handle_t *dev_a, sja1105_handle_t *dev_b) {
 
     sja1105_status_t status = SJA1105_OK;
@@ -241,12 +243,12 @@ sja1105_status_t SJA1105_GetEgressTimestamp(sja1105_handle_t *dev, uint8_t port,
     /* Check the device is initialised and take the mutex */
     SJA1105_LOCK;
 
-    /* Read the current time first because it is always changing */
-    status = SJA1105_GetCurrentTime(dev, &current_time);
-    if (status != SJA1105_OK) goto end;
-
-    /* Read the egress timestamp register second because it is static */
-    status = SJA1105_ReadRegister(dev, SJA1105_REG_PTP_EGR_TS_UPDATE_0 + 2 * ((2 * port) + tsreg), reg_data, 2);
+    /* Read the egress timestamp register */
+    status = SJA1105_ReadRegister(
+        dev,
+        SJA1105_PTP_EGR_TS_REG_OFFSET(port, tsreg),
+        reg_data,
+        SJA1105_PTP_EGR_TS_REG_SIZE);
     if (status != SJA1105_OK) goto end;
 
     /* Check for an update */
@@ -255,12 +257,16 @@ sja1105_status_t SJA1105_GetEgressTimestamp(sja1105_handle_t *dev, uint8_t port,
         goto end;
     }
 
+    /* Read the current time */
+    status = SJA1105_GetCurrentTime(dev, &current_time);
+    if (status != SJA1105_OK) goto end;
+
     /* Reconstruct the egress timestamp */
     reconstructed_timestamp = (current_time & ~SJA1105_PTP_EGR_TS_MASK_64) | (reg_data[1] & SJA1105_PTP_EGR_TS_MASK_32);
 
     /* Handle the wrap around */
     if (reconstructed_timestamp > current_time) {
-        reconstructed_timestamp -= (1ULL << 24);
+        reconstructed_timestamp -= (1ULL << SJA1105_PTP_EGR_TS_BITS);
     }
 
     *timestamp = reconstructed_timestamp;
@@ -268,6 +274,65 @@ sja1105_status_t SJA1105_GetEgressTimestamp(sja1105_handle_t *dev, uint8_t port,
 end:
 
     /* Give the mutex and return */
+    SJA1105_UNLOCK;
+    return status;
+}
+
+
+sja1105_status_t SJA1105_GetIngressTimestamp(sja1105_handle_t *dev, uint8_t *payload, uint8_t *switch_id, uint8_t *src_port, uint64_t *timestamp) {
+
+    sja1105_status_t status = SJA1105_OK;
+
+#if SJA1105_CHECKS_ENABLED
+    if (payload == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (timestamp == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
+#endif
+
+    SJA1105_LOCK;
+
+    uint8_t  switch_id_internal;
+    uint8_t  src_port_internal;
+    uint32_t partial_timestamp;
+
+    uint64_t current_time;
+    uint64_t reconstructed_timestamp;
+
+    /* Extract fields from the META frame */
+    status = SJA1105_ParseMETAFrame(payload, &switch_id_internal, &src_port_internal, &partial_timestamp);
+    if (status != SJA1105_OK) goto end;
+
+    /* Get the handle of the switch that received the META frame */
+    do {
+        if (dev->config->switch_id == switch_id_internal) break;
+        dev = SJA1105_GetCasc(dev);
+    } while (dev != NULL);
+
+    /* No switch found with matching ID */
+    if (dev == NULL) {
+        status = SJA1105_ID_NOT_FOUND_ERROR;
+        goto end;
+    }
+
+    /* Get the current (64-bit time) */
+    status = SJA1105_GetCurrentTime(dev, &current_time);
+    if (status != SJA1105_OK) goto end;
+
+    /* Reconstruct the ingress timestamp */
+    reconstructed_timestamp = (current_time & ~SJA1105_PTP_ING_TS_MASK_64) | (partial_timestamp & SJA1105_PTP_ING_TS_MASK_32);
+
+    /* Handle the wrap around */
+    if (reconstructed_timestamp > current_time) {
+        reconstructed_timestamp -= (1ULL << SJA1105_PTP_ING_TS_BITS);
+    }
+
+    /* Assign outputs */
+    *timestamp = reconstructed_timestamp;
+    if (switch_id != NULL) *switch_id = switch_id_internal;
+    if (src_port != NULL) *src_port = src_port_internal;
+
+end:
+
     SJA1105_UNLOCK;
     return status;
 }
