@@ -311,13 +311,38 @@ sja1105_status_t SJA1105_ManagementRouteFreeCasc(sja1105_handle_t *dev, bool for
 
 sja1105_status_t SJA1105_ParseMETAFrame(uint8_t *payload, uint8_t *switch_id, uint8_t *src_port, uint32_t *partial_timestamp) {
 
-    sja1105_status_t status = SJA1105_NOT_IMPLEMENTED_ERROR;
+    sja1105_status_t status = SJA1105_OK;
+    uint8_t          switch_id_internal;
+    uint8_t          src_port_internal;
+    uint32_t         partial_timestamp_internal;
 
-#if SJA1105_CHECKS_ENABLED
+#if SJA1105_PARAM_CHECKS_ENABLED
     if (payload == NULL) status = SJA1105_PARAMETER_ERROR;
     if (status != SJA1105_OK) return status;
 #endif
 
+    /* Extract 32-bit timestamp (big-endian order) */
+    partial_timestamp_internal = ((uint32_t) payload[SJA1105_META_TS3] << 24) |
+                                 ((uint32_t) payload[SJA1105_META_TS2] << 16) |
+                                 ((uint32_t) payload[SJA1105_META_TS1] << 8) |
+                                 ((uint32_t) payload[SJA1105_META_TS0]);
+
+    /* TODO: use destination to tell which filter trapped the frame (SJA1105_META_DST2, SJA1105_META_DST1) */
+
+    /* Extract source port */
+    src_port_internal = payload[SJA1105_META_SRC_PORT];
+
+    /* Extract switch ID */
+    switch_id_internal = payload[SJA1105_META_SWITCH_ID];
+
+    /* Source port must be 0-4 */
+    if (src_port_internal >= SJA1105_NUM_PORTS) status = SJA1105_INVALID_VALUE_ERROR;
+    if (status != SJA1105_OK) return status;
+
+    /* Assign the outputs */
+    if (switch_id != NULL) *switch_id = switch_id_internal;
+    if (src_port != NULL) *src_port = src_port_internal;
+    if (partial_timestamp != NULL) *partial_timestamp = partial_timestamp_internal;
 
     return status;
 }

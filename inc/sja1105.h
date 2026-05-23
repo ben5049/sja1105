@@ -66,8 +66,8 @@ extern "C" {
 #endif
 
 /* Enable and disable argument checking in functions */
-#ifndef SJA1105_CHECKS_ENABLED
-#define SJA1105_CHECKS_ENABLED (1)
+#ifndef SJA1105_PARAM_CHECKS_ENABLED
+#define SJA1105_PARAM_CHECKS_ENABLED (1)
 #endif
 
 /* Maximum number of cascaded switches */

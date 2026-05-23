@@ -75,7 +75,8 @@ sja1105_status_t __SJA1105_PortSetSpeed(sja1105_handle_t *dev, uint8_t port_num,
         status = SJA1105_OK;
         goto end;
     };
-#if SJA1105_CHECKS_ENABLED
+
+#if SJA1105_PARAM_CHECKS_ENABLED
     if (port->speed != SJA1105_SPEED_DYNAMIC) status = SJA1105_PARAMETER_ERROR; /* Only ports configured as dynamic can have their speed changed */
     if (new_speed == SJA1105_SPEED_DYNAMIC) status = SJA1105_PARAMETER_ERROR;   /* Speed shouldn't be set to dynamic after the initial configuration */
     if (new_speed >= SJA1105_SPEED_INVALID) status = SJA1105_PARAMETER_ERROR;   /* Invalid speed */

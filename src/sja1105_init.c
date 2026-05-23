@@ -21,7 +21,7 @@ sja1105_status_t SJA1105_PortConfigure(sja1105_config_t *config, const sja1105_p
     sja1105_status_t status = SJA1105_OK;
 
     /* Check the parameters */
-#if SJA1105_CHECKS_ENABLED
+#if SJA1105_PARAM_CHECKS_ENABLED
     if (port_config->port_num >= SJA1105_NUM_PORTS) status = SJA1105_PARAMETER_ERROR;
     if (port_config->interface >= SJA1105_INTERFACE_INVALID) status = SJA1105_PARAMETER_ERROR;
     if (port_config->mode >= SJA1105_MODE_INVALID) status = SJA1105_PARAMETER_ERROR;
@@ -169,7 +169,7 @@ sja1105_status_t SJA1105_Init(
     if (config->variant != VARIANT_SJA1105Q) status = SJA1105_NOT_IMPLEMENTED_ERROR;
     if (status != SJA1105_OK) return status;
 
-#if SJA1105_CHECKS_ENABLED
+#if SJA1105_PARAM_CHECKS_ENABLED
 
     /* Check config parameters */
     if (config->switch_id > 7) status = SJA1105_PARAMETER_ERROR; /* 3-bit field */

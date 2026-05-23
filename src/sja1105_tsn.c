@@ -202,7 +202,7 @@ sja1105_status_t SJA1105_GetCurrentTime(sja1105_handle_t *dev, uint64_t *timesta
     sja1105_status_t status = SJA1105_OK;
     uint32_t         reg_data[2];
 
-#if SJA1105_CHECKS_ENABLED
+#if SJA1105_PARAM_CHECKS_ENABLED
     if (timestamp == NULL) status = SJA1105_PARAMETER_ERROR;
     if (status != SJA1105_OK) return status;
 #endif
@@ -233,7 +233,7 @@ sja1105_status_t SJA1105_GetEgressTimestamp(sja1105_handle_t *dev, uint8_t port,
     uint64_t         current_time;
     uint64_t         reconstructed_timestamp = 0;
 
-#if SJA1105_CHECKS_ENABLED
+#if SJA1105_PARAM_CHECKS_ENABLED
     if (port >= SJA1105_NUM_PORTS) status = SJA1105_PARAMETER_ERROR;
     if (tsreg > 1) status = SJA1105_PARAMETER_ERROR;
     if (timestamp == NULL) status = SJA1105_PARAMETER_ERROR;
@@ -283,7 +283,7 @@ sja1105_status_t SJA1105_GetIngressTimestamp(sja1105_handle_t *dev, uint8_t *pay
 
     sja1105_status_t status = SJA1105_OK;
 
-#if SJA1105_CHECKS_ENABLED
+#if SJA1105_PARAM_CHECKS_ENABLED
     if (payload == NULL) status = SJA1105_PARAMETER_ERROR;
     if (timestamp == NULL) status = SJA1105_PARAMETER_ERROR;
     if (status != SJA1105_OK) return status;

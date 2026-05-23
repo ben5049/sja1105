@@ -645,6 +645,20 @@ enum SJA1105_L2LUTHostCmd_Enum {
 #define SJA1105_DYN_CONF_MAC_CONF_PORTID_SHIFT     (0)
 #define SJA1105_DYN_CONF_MAC_CONF_PORTID_MASK      (0x7 << SJA1105_DYN_CONF_MAC_CONF_PORTID_SHIFT)
 
+/* ---------------------------------------------------------------------------- */
+/* META Frames */
+/* ---------------------------------------------------------------------------- */
+
+/* META frame byte indices */
+#define SJA1105_META_TS3       (0)
+#define SJA1105_META_TS2       (1)
+#define SJA1105_META_TS1       (2)
+#define SJA1105_META_TS0       (3)
+#define SJA1105_META_DST2      (4)
+#define SJA1105_META_DST1      (5)
+#define SJA1105_META_SRC_PORT  (6)
+#define SJA1105_META_SWITCH_ID (7)
+
 
 #ifdef __cplusplus
 }
