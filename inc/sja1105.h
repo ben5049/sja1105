@@ -448,6 +448,7 @@ sja1105_status_t SJA1105_PortWake(sja1105_handle_t *dev, uint8_t port_num);
 sja1105_status_t SJA1105_ReadTemperature(sja1105_handle_t *dev, float *temp);
 sja1105_status_t SJA1105_CheckStatusRegisters(sja1105_handle_t *dev);
 sja1105_status_t SJA1105_MACAddrTrapTest(sja1105_handle_t *dev, const uint8_t *addr, bool *trapped, bool *send_meta, bool *incl_srcpt);
+sja1105_status_t SJA1105_GetSRCMETA(sja1105_handle_t *dev, uint32_t *msw, uint32_t *lsw);
 sja1105_status_t SJA1105_ReadAllTables(sja1105_handle_t *dev);
 sja1105_status_t SJA1105_ReadStatsMAC(sja1105_handle_t *dev, sja1105_stats_mac_level_t *stats);
 sja1105_status_t SJA1105_ReadStatsHighLevel(sja1105_handle_t *dev, sja1105_stats_high_level_t *stats, bool part1, bool part2);

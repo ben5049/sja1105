@@ -580,6 +580,37 @@ end:
 }
 
 
+sja1105_status_t SJA1105_GetSRCMETA(sja1105_handle_t *dev, uint32_t *msw, uint32_t *lsw) {
+
+    sja1105_status_t status = SJA1105_OK;
+    uint32_t        *data;
+
+    /* Check the device is initialised and take the mutex */
+    SJA1105_LOCK;
+
+    /* Check the table is present */
+    if (!dev->tables.avb_parameters.in_use) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) goto end;
+
+    data = dev->tables.avb_parameters.data;
+
+    /* Extract SRCMETA from bits 77:30 */
+
+    /* LSW (Bits 61:30): Bottom 2 bits from word 0, top 30 bits from word 1 */
+    *lsw = ((data[0] >> SJA1105_STATIC_CONF_AVB_PARAMS_SRCMETA_W0_SHIFT) & SJA1105_STATIC_CONF_AVB_PARAMS_SRCMETA_W0_MASK) |
+           ((data[1] & SJA1105_STATIC_CONF_AVB_PARAMS_SRCMETA_W1_LSB_MASK) << SJA1105_STATIC_CONF_AVB_PARAMS_SRCMETA_ALIGN_SHIFT);
+
+    /* MSW (Bits 77:62): Bottom 2 bits from word 1, top 14 bits from word 2 */
+    *msw = (data[1] >> SJA1105_STATIC_CONF_AVB_PARAMS_SRCMETA_W1_MSB_SHIFT) |
+           ((data[2] & SJA1105_STATIC_CONF_AVB_PARAMS_SRCMETA_W2_MASK) << SJA1105_STATIC_CONF_AVB_PARAMS_SRCMETA_ALIGN_SHIFT);
+
+end:
+    /* Give the mutex and return */
+    SJA1105_UNLOCK;
+    return status;
+}
+
+
 /* Read current table data from the SJA1105 into the device struct. Can be used to ensure shadow tables are the same */
 sja1105_status_t SJA1105_ReadAllTables(sja1105_handle_t *dev) {
 

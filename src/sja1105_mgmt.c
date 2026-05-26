@@ -91,25 +91,25 @@ sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint
 
     /* Copy the destination MAC address into ENTRY[69:22] */
 
-    /* dst_addr[5] is MAC[7:0] -> maps to bits [29:22] */
-    lut_entry[0] |= ((uint32_t) dst_addr[5]) << 22;
+    /* dst_addr[0] is MAC[7:0] -> maps to bits [29:22] */
+    lut_entry[0] |= ((uint32_t) dst_addr[0]) << 22;
 
-    /* dst_addr[4] is MAC[15:8] -> maps to bits [37:30] */
-    lut_entry[0] |= ((uint32_t) dst_addr[4]) << 30; /* bits [31:30] */
-    lut_entry[1] |= ((uint32_t) dst_addr[4]) >> 2;  /* bits [37:32] */
+    /* dst_addr[1] is MAC[15:8] -> maps to bits [37:30] */
+    lut_entry[0] |= ((uint32_t) dst_addr[1]) << 30; /* bits [31:30] */
+    lut_entry[1] |= ((uint32_t) dst_addr[1]) >> 2;  /* bits [37:32] */
 
-    /* dst_addr[3] is MAC[23:16] -> maps to bits [45:38] */
-    lut_entry[1] |= ((uint32_t) dst_addr[3]) << 6;
+    /* dst_addr[2] is MAC[23:16] -> maps to bits [45:38] */
+    lut_entry[1] |= ((uint32_t) dst_addr[2]) << 6;
 
-    /* dst_addr[2] is MAC[31:24] -> maps to bits [53:46] */
-    lut_entry[1] |= ((uint32_t) dst_addr[2]) << 14;
+    /* dst_addr[3] is MAC[31:24] -> maps to bits [53:46] */
+    lut_entry[1] |= ((uint32_t) dst_addr[3]) << 14;
 
-    /* dst_addr[1] is MAC[39:32] -> maps to bits [61:54] */
-    lut_entry[1] |= ((uint32_t) dst_addr[1]) << 22;
+    /* dst_addr[4] is MAC[39:32] -> maps to bits [61:54] */
+    lut_entry[1] |= ((uint32_t) dst_addr[4]) << 22;
 
-    /* dst_addr[0] is MAC[47:40] -> maps to bits [69:62] */
-    lut_entry[1] |= ((uint32_t) dst_addr[0]) << 30; /* bits [63:62] */
-    lut_entry[2] |= ((uint32_t) dst_addr[0]) >> 2;  /* bits [69:64] */
+    /* dst_addr[5] is MAC[47:40] -> maps to bits [69:62] */
+    lut_entry[1] |= ((uint32_t) dst_addr[5]) << 30; /* bits [63:62] */
+    lut_entry[2] |= ((uint32_t) dst_addr[5]) >> 2;  /* bits [69:64] */
 
     /* Wait for VALID to be 0. */
     status = SJA1105_PollFlag(dev, SJA1105_DYN_CONF_L2_LUT_REG_0, SJA1105_DYN_CONF_L2_LUT_VALID, false);
@@ -163,7 +163,7 @@ sja1105_status_t SJA1105_ManagementRouteCreateCasc(sja1105_handle_t *dev, const 
 
         /* Create the management route in the current switch.
          * Only take a timestamp if sending from non CASC port */
-        non_casc_port = (bool) (dst_ports[dev_index] & ~(1 << dev->config->casc_port));
+        non_casc_port = (dst_ports[dev_index] & ~(1 << dev->config->casc_port)) != 0;
         status        = SJA1105_ManagementRouteCreate(
             dev,
             dst_addr,

@@ -515,15 +515,23 @@ typedef enum {
 #define SJA1105_SEND_META1                                      (1 << 21)
 #define SJA1105_SEND_META0                                      (1 << 20)
 
-#define SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W0_SHIFT        (30)
-#define SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W0_MASK         (0x00000003) /* Bits 31:30 (2 bits)  */
-#define SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W1_LSB_MASK     (0x3fffffff) /* Bits 61:32 (30 bits) */
-#define SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W1_MSB_SHIFT    (30)         /* Bits 63:62 (2 bits)  */
-#define SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W2_MASK         (0x00003fff) /* Bits 77:64 (14 bits) */
-#define SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_ALIGN_SHIFT     (2)          /* Alignment offset between table words and MSW/LSW */
+#define SJA1105_STATIC_CONF_AVB_PARAMS_SRCMETA_W0_SHIFT         (30)
+#define SJA1105_STATIC_CONF_AVB_PARAMS_SRCMETA_W0_MASK          (0x00000003) /* Bits 31:30 (2 bits)  */
+#define SJA1105_STATIC_CONF_AVB_PARAMS_SRCMETA_W1_LSB_MASK      (0x3fffffff) /* Bits 61:32 (30 bits) */
+#define SJA1105_STATIC_CONF_AVB_PARAMS_SRCMETA_ALIGN_SHIFT      (2)          /* Alignment offset     */
+#define SJA1105_STATIC_CONF_AVB_PARAMS_SRCMETA_W1_MSB_SHIFT     (30)         /* Bits 63:62 (2 bits)  */
+#define SJA1105_STATIC_CONF_AVB_PARAMS_SRCMETA_W2_MASK          (0x00003fff) /* Bits 77:64 (14 bits) */
 
-#define SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_OFFSET        (3)          /* bit 126 therefore in the 4th word */
-#define SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_SHIFT         (30)         /* shifted up by 30 */
+#define SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W2_SHIFT        (14)
+#define SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W2_MASK         (0x0003ffff) /* Bits 95:78 (18 bits) */
+#define SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W3_LSB_MASK     (0x00003fff) /* Bits 109:96 (14 bits) */
+#define SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_ALIGN_SHIFT     (18)         /* Alignment offset */
+#define SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W3_MSB_SHIFT    (14)
+#define SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W3_MSB_MASK     (0x0000ffff) /* Bits 125:110 (16 bits) */
+#define SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W3_CLEAR_MASK   (0x3fffffff)
+
+#define SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_OFFSET        (3)  /* bit 126 therefore in the 4th word */
+#define SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_SHIFT         (30) /* shifted up by 30 */
 #define SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_MASK          (0x1 << SJA1105_STATIC_CONF_AVB_PARAMS_CAS_MASTER_SHIFT)
 
 #define SJA1105_STATIC_CONF_GENERAL_PARAMS_HOST_PORT_OFFSET     (4)  /* [144:142] therefore in the 5th word */

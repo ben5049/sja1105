@@ -327,6 +327,10 @@ sja1105_status_t SJA1105_LoadStaticConfig(sja1105_handle_t *dev, const uint32_t 
         }
         if (status != SJA1105_OK) return status;
 
+        /* Overwrite parts of blocks */
+        status = SJA1105_PatchTable(dev, block_id);
+        if (status != SJA1105_OK) return status;
+
         /* Set the block index for the next block */
         block_index = block_index_next;
 

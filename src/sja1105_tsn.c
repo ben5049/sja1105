@@ -32,7 +32,7 @@ static inline sja1105_status_t SJA1105_UsePTPCLK(sja1105_handle_t *dev) {
     sja1105_status_t status = SJA1105_OK;
     bool             updated;
 
-    updated = (bool) (dev->regs.ptp_ctrl_reg_1_set_mask & SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS);
+    updated = (dev->regs.ptp_ctrl_reg_1_set_mask & SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS) != 0;
 
     dev->regs.ptp_ctrl_reg_1_set_mask   |= SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS;
     dev->regs.ptp_ctrl_reg_1_clear_mask &= ~SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS;
@@ -50,7 +50,7 @@ static inline sja1105_status_t SJA1105_UsePTPTSCLK(sja1105_handle_t *dev) {
     sja1105_status_t status = SJA1105_OK;
     bool             updated;
 
-    updated = (bool) (dev->regs.ptp_ctrl_reg_1_clear_mask & SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS);
+    updated = (dev->regs.ptp_ctrl_reg_1_clear_mask & SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS) != 0;
 
     dev->regs.ptp_ctrl_reg_1_set_mask   &= ~SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS;
     dev->regs.ptp_ctrl_reg_1_clear_mask |= SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS;
