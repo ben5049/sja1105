@@ -75,6 +75,12 @@ extern "C" {
 #define SJA1105_MAX_CASC (5)
 #endif
 
+/* Overwrite DESTMETA in the AVB params table if it doesn't match the config */
+#ifndef SJA1105_OVERWRITE_DESTMETA
+#define SJA1105_OVERWRITE_DESTMETA (1)
+#endif
+
+
 /* Typedefs */
 
 typedef struct sja1105_handle_t sja1105_handle_t;
@@ -182,6 +188,8 @@ typedef struct {
     uint8_t           casc_port;    /* Port connected to another switch downstream from the host */
     bool              skew_clocks;  /* Make xMII clocks use different phases (where possible) to improve EMC performance */
     uint8_t           switch_id;    /* Used to identify the switch that trapped a frame */
+    uint32_t          destmeta_msw; /* META Frame destination address bits [47:32] */
+    uint32_t          destmeta_lsw; /* META Frame destination address bits [31:0] */
 } sja1105_config_t;
 
 typedef struct {

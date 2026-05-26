@@ -92,6 +92,11 @@ sja1105_status_t SJA1105_CheckTable(sja1105_handle_t *dev, sja1105_block_id_t id
             break;
         }
 
+        case SJA1105_BLOCK_ID_AVB_PARAMS: {
+            status = SJA1105_AVBParamsTableCheck(dev, &table);
+            break;
+        }
+
         case SJA1105_BLOCK_ID_GENERAL_PARAMS: {
             status = SJA1105_GeneralParamsTableCheck(dev, &table);
             break;
@@ -399,6 +404,58 @@ sja1105_status_t SJA1105_MACConfTableRead(sja1105_handle_t *dev, uint8_t port_nu
     /* Read the table */
     status = SJA1105_ReadRegister(dev, SJA1105_DYN_CONF_MAC_CONF_REG_1, dev->tables.mac_configuration.data + index, SJA1105_STATIC_CONF_MAC_CONF_ENTRY_SIZE);
     if (status != SJA1105_OK) return status;
+
+    return status;
+}
+
+
+sja1105_status_t SJA1105_AVBParamsTableCheck(sja1105_handle_t *dev, const sja1105_table_t *table) {
+
+    sja1105_status_t status = SJA1105_OK;
+    uint32_t         table_destmeta_msw;
+    uint32_t         table_destmeta_lsw;
+
+    /* Check the size is correct */
+    if (*table->size != SJA1105_STATIC_CONF_AVB_PARAMS_SIZE) status = SJA1105_STATIC_CONF_ERROR;
+    if (status != SJA1105_OK) return status;
+
+    /* Extract the META frame destination stored in bits 77:30 */
+    table_destmeta_lsw = ((table->data[0] >> SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W0_SHIFT) & SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W0_MASK) |
+                         ((table->data[1] & SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W1_LSB_MASK) << SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_ALIGN_SHIFT);
+
+    table_destmeta_msw = (table->data[1] >> SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W1_MSB_SHIFT) |
+                         ((table->data[2] & SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W2_MASK) << SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_ALIGN_SHIFT);
+
+    /* Compare the extracted values against the config */
+    if ((table_destmeta_msw != dev->config->destmeta_msw) ||
+        (table_destmeta_lsw != dev->config->destmeta_lsw)) {
+
+#if SJA1105_OVERWRITE_DESTMETA
+
+        /* Clear DESTMETA */
+        table->data[0] &= ~(SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W0_MASK << SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W0_SHIFT);
+        table->data[1]  = 0;
+        table->data[2] &= ~(SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W2_MASK);
+
+        /* Write new DESTMETA */
+        table->data[0] |= (dev->config->destmeta_lsw & SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W0_MASK) << SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W0_SHIFT;
+
+        table->data[1] = (dev->config->destmeta_lsw >> SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_ALIGN_SHIFT) |
+                         ((dev->config->destmeta_msw & SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W0_MASK) << SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W1_MSB_SHIFT);
+
+        table->data[2] |= (dev->config->destmeta_msw >> SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_ALIGN_SHIFT) & SJA1105_STATIC_CONF_AVB_PARAMS_DESTMETA_W2_MASK;
+
+        /* Recalculate CRC */
+        status = SJA1105_CRC_RESET();
+        if (status != SJA1105_OK) return status;
+        status = SJA1105_CRC_ACCUMULATE(table->data, SJA1105_STATIC_CONF_AVB_PARAMS_SIZE, table->data_crc);
+        if (status != SJA1105_OK) return status;
+
+#else
+        status = SJA1105_PARAMETER_ERROR;
+        return status;
+#endif
+    }
 
     return status;
 }

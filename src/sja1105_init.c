@@ -191,11 +191,16 @@ sja1105_status_t SJA1105_Init(
     if (callbacks->callback_delay_ns == NULL) status = SJA1105_PARAMETER_ERROR;
     if (callbacks->callback_take_mutex == NULL) status = SJA1105_PARAMETER_ERROR;
     if (callbacks->callback_give_mutex == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (callbacks->callback_enter_critical == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (callbacks->callback_exit_critical == NULL) status = SJA1105_PARAMETER_ERROR;
     if (callbacks->callback_allocate == NULL) status = SJA1105_PARAMETER_ERROR;
     if (callbacks->callback_free == NULL) status = SJA1105_PARAMETER_ERROR;
     if (callbacks->callback_free_all == NULL) status = SJA1105_PARAMETER_ERROR;
     if (callbacks->callback_crc_reset == NULL) status = SJA1105_PARAMETER_ERROR;
     if (callbacks->callback_crc_accumulate == NULL) status = SJA1105_PARAMETER_ERROR;
+#if SJA1105_LOGGING_ENABLED
+    if (callbacks->callback_write_log == NULL) status = SJA1105_PARAMETER_ERROR;
+#endif
     if (status != SJA1105_OK) goto end; /* If there are invalid parameters then return */
 
 #endif
