@@ -37,6 +37,8 @@ extern "C" {
 #define SJA1105_L2ADDR_LU_ENTRY_SIZE  (5)
 #define SJA1105_L2ADDR_LU_NUM_ENTRIES (1024)
 #define SJA1105_NO_TIMESTAMP          (0ULL)
+#define SJA1105_IFG                   (12) /* Inter frame gap in bytes */
+#define SJA1105_PREAMBLE              (8)  /* Preamble length in bytes */
 
 /* Timings */
 #define SJA1105_T_RST            (5000)   /* Reset pin pulse width 5000ns (5us) */
