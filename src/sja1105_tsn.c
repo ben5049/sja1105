@@ -62,7 +62,42 @@ static inline sja1105_status_t SJA1105_UsePTPTSCLK(sja1105_handle_t *dev) {
 }
 
 
-static sja1105_status_t SJA1105_GetTimestampOffset(sja1105_handle_t *master, sja1105_handle_t *slave, int64_t *offset) {
+static sja1105_status_t SJA1105_GetCASMaster(sja1105_handle_t *dev_a, sja1105_handle_t *dev_b, sja1105_handle_t **master, sja1105_handle_t **slave) {
+
+    sja1105_status_t status = SJA1105_OK;
+
+    bool dev_a_is_master;
+    bool dev_b_is_master;
+
+    /* Check the CAS master bits */
+    status = SJA1105_AVBParamsTableGetCASMaster(&dev_a->tables.avb_parameters, &dev_a_is_master);
+    if (status != SJA1105_OK) return status;
+    status = SJA1105_AVBParamsTableGetCASMaster(&dev_b->tables.avb_parameters, &dev_b_is_master);
+    if (status != SJA1105_OK) return status;
+
+    /* Check config: exactly one must be a master */
+    if (dev_a_is_master == dev_b_is_master) {
+        status = SJA1105_STATIC_CONF_ERROR;
+        if (status != SJA1105_OK) return status;
+    }
+
+    /* dev_a is the timestamp master */
+    if (dev_a_is_master) {
+        *master = dev_a;
+        *slave  = dev_b;
+    }
+
+    /* dev_b is the timestamp master */
+    else {
+        *master = dev_b;
+        *slave  = dev_a;
+    }
+
+    return status;
+}
+
+
+static sja1105_status_t _SJA1105_GetTimestampOffset(sja1105_handle_t *master, sja1105_handle_t *slave, int64_t *offset) {
 
     sja1105_status_t status = SJA1105_OK;
     uint32_t         reg_data[2];
@@ -95,6 +130,56 @@ static sja1105_status_t SJA1105_GetTimestampOffset(sja1105_handle_t *master, sja
 }
 
 
+sja1105_status_t SJA1105_GetTimestampOffset(sja1105_handle_t *dev_a, sja1105_handle_t *dev_b, int64_t *offset) {
+
+    sja1105_status_t status = SJA1105_OK;
+
+#if SJA1105_PARAM_CHECKS_ENABLED
+    if (dev_a == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (dev_b == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (offset == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
+#endif
+
+    /* Take the mutexes */
+    status = dev_a->callbacks->callback_take_mutex(dev_a->config->timeout, dev_a->callback_context);
+    if (status != SJA1105_OK) return status;
+    status = dev_b->callbacks->callback_take_mutex(dev_b->config->timeout, dev_b->callback_context);
+    if (status != SJA1105_OK) goto release_a;
+
+    sja1105_handle_t *master;
+    sja1105_handle_t *slave;
+    int64_t           offset_internal;
+
+    /* Find out which is the master and which is the slave */
+    status = SJA1105_GetCASMaster(dev_a, dev_b, &master, &slave);
+    if (status != SJA1105_OK) goto end;
+
+    /* Get the timestamp offset */
+    status = _SJA1105_GetTimestampOffset(master, slave, &offset_internal);
+    if (status != SJA1105_OK) goto end;
+
+    /* Account for the fact that handles could have swapped order */
+    if (master == dev_a) {
+        *offset = offset_internal;
+    } else {
+        *offset = -offset_internal;
+    }
+
+    /* Give the mutexes and return */
+
+end:
+
+    dev_b->callbacks->callback_give_mutex(dev_b->callback_context);
+
+release_a:
+
+    dev_a->callbacks->callback_give_mutex(dev_a->callback_context);
+
+    return status;
+}
+
+
 sja1105_status_t SJA1105_InitTSN(sja1105_handle_t *dev) {
 
     sja1105_status_t status = SJA1105_OK;
@@ -114,14 +199,18 @@ sja1105_status_t SJA1105_SyncTimestamps(sja1105_handle_t *dev_a, sja1105_handle_
 
     sja1105_status_t status = SJA1105_OK;
 
+#if SJA1105_PARAM_CHECKS_ENABLED
+    if (dev_a == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (dev_b == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
+#endif
+
     /* Take the mutexes */
     status = dev_a->callbacks->callback_take_mutex(dev_a->config->timeout, dev_a->callback_context);
     if (status != SJA1105_OK) return status;
     status = dev_b->callbacks->callback_take_mutex(dev_b->config->timeout, dev_b->callback_context);
     if (status != SJA1105_OK) goto release_a;
 
-    bool              dev_a_is_master;
-    bool              dev_b_is_master;
     sja1105_handle_t *master;
     sja1105_handle_t *slave;
     uint32_t          reg_data[2];
@@ -129,36 +218,16 @@ sja1105_status_t SJA1105_SyncTimestamps(sja1105_handle_t *dev_a, sja1105_handle_
     uint64_t          offset_abs;
     int64_t           offset_new;
 
-    /* Check the CAS master bits */
-    status = SJA1105_AVBParamsTableGetCASMaster(&dev_a->tables.avb_parameters, &dev_a_is_master);
+    /* Find out which is the master and which is the slave */
+    status = SJA1105_GetCASMaster(dev_a, dev_b, &master, &slave);
     if (status != SJA1105_OK) goto end;
-    status = SJA1105_AVBParamsTableGetCASMaster(&dev_b->tables.avb_parameters, &dev_b_is_master);
-    if (status != SJA1105_OK) goto end;
-
-    /* Check config: exactly one must be a master */
-    if (dev_a_is_master == dev_b_is_master) {
-        status = SJA1105_STATIC_CONF_ERROR;
-        goto end;
-    }
-
-    /* dev_a is the timestamp master */
-    if (dev_a_is_master) {
-        master = dev_a;
-        slave  = dev_b;
-    }
-
-    /* dev_b is the timestamp master */
-    else {
-        master = dev_b;
-        slave  = dev_a;
-    }
 
     /* Slave must use PTPCLK (instead of PTPTSCLK) to support hardware corrections */
     status = SJA1105_UsePTPCLK(slave);
     if (status != SJA1105_OK) goto end;
 
     /* Get the offset */
-    status = SJA1105_GetTimestampOffset(master, slave, &offset);
+    status = _SJA1105_GetTimestampOffset(master, slave, &offset);
     if (status != SJA1105_OK) goto end;
     offset_abs = ABS(offset);
 
@@ -173,7 +242,7 @@ sja1105_status_t SJA1105_SyncTimestamps(sja1105_handle_t *dev_a, sja1105_handle_
     if (status != SJA1105_OK) goto end;
 
     /* Get the new offset and check the correction has been applied */
-    status = SJA1105_GetTimestampOffset(master, slave, &offset_new);
+    status = _SJA1105_GetTimestampOffset(master, slave, &offset_new);
     if (status != SJA1105_OK) goto end;
 
     /* Check the new offset under 1us */

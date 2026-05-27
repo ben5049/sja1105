@@ -39,6 +39,7 @@ extern "C" {
 #define SJA1105_NO_TIMESTAMP          (0ULL)
 #define SJA1105_IFG                   (12) /* Inter frame gap in bytes */
 #define SJA1105_PREAMBLE              (8)  /* Preamble length in bytes */
+#define SJA1105_NS_PER_TS_TICK        (8)  /* 8ns per timestamp counter tick */
 
 /* Timings */
 #define SJA1105_T_RST            (5000)   /* Reset pin pulse width 5000ns (5us) */
@@ -471,6 +472,7 @@ sja1105_status_t SJA1105_L2EntryReadByIndex(sja1105_handle_t *dev, uint16_t inde
 sja1105_status_t SJA1105_FlushTCAM(sja1105_handle_t *dev);
 
 /* TSN */
+sja1105_status_t SJA1105_GetTimestampOffset(sja1105_handle_t *dev_a, sja1105_handle_t *dev_b, int64_t *offset);
 sja1105_status_t SJA1105_SyncTimestamps(sja1105_handle_t *dev_a, sja1105_handle_t *dev_b);
 sja1105_status_t SJA1105_GetCurrentTime(sja1105_handle_t *dev, uint64_t *timestamp);
 sja1105_status_t SJA1105_GetEgressTimestamp(sja1105_handle_t *dev, uint8_t port, uint8_t tsreg, uint64_t *timestamp);
