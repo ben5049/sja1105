@@ -572,7 +572,7 @@ enum SJA1105_CtrlAreaReg_Enum {
     SJA1105_CTRL_AREA_PTP_REG_6          = 0x17,
     SJA1105_CTRL_AREA_PTP_REG_7          = 0x19, /* PTPCLKVALL */
     SJA1105_CTRL_AREA_PTP_REG_8          = 0x1a, /* PTPCLKVALU */
-    SJA1105_CTRL_AREA_PTP_REG_9          = 0x1b,
+    SJA1105_CTRL_AREA_PTP_REG_9          = 0x1b, /* PTPCLKRATE */
     SJA1105_CTRL_AREA_PTP_REG_10         = 0x1c,
     SJA1105_CTRL_AREA_PTP_REG_11         = 0x1d,
     SJA1105_CTRL_AREA_PTP_REG_12         = 0x1e,

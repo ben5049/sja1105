@@ -39,17 +39,21 @@ extern "C" {
 #define SJA1105_NO_TIMESTAMP          (0ULL)
 #define SJA1105_IFG                   (12) /* Inter frame gap in bytes */
 #define SJA1105_PREAMBLE              (8)  /* Preamble length in bytes */
-#define SJA1105_NS_PER_TS_TICK        (8)  /* 8ns per timestamp counter tick */
 
 /* Timings */
-#define SJA1105_T_RST            (5000)   /* Reset pin pulse width 5000ns (5us) */
-#define SJA1105_T_RST_STARTUP_HW (329000) /* 329000ns (329us) */
-#define SJA1105_T_RST_STARTUP_SW (2000)   /* 2000ns (2us) */
-#define SJA1105_T_SPI_WR         (130)    /* ns */
-#define SJA1105_T_SPI_CTRL_DATA  (64)     /* Time between writing the command frame and reading data in ns */
-#define SJA1105_T_SPI_LEAD       (40)     /* ns */
-#define SJA1105_T_SPI_LAG        (40)     /* ns */
-#define SJA1105_T_TDL_CHANGE     (2000)   /* 2000ns (2us) */
+#define SJA1105_T_RST                        (5000)         /* Reset pin pulse width 5000ns (5us) */
+#define SJA1105_T_RST_STARTUP_HW             (329000)       /* 329000ns (329us) */
+#define SJA1105_T_RST_STARTUP_SW             (2000)         /* 2000ns (2us) */
+#define SJA1105_T_SPI_WR                     (130)          /* ns */
+#define SJA1105_T_SPI_CTRL_DATA              (64)           /* Time between writing the command frame and reading data in ns */
+#define SJA1105_T_SPI_LEAD                   (40)           /* ns */
+#define SJA1105_T_SPI_LAG                    (40)           /* ns */
+#define SJA1105_T_TDL_CHANGE                 (2000)         /* 2000ns (2us) */
+
+#define SJA1105_NS_PER_TS_TICK               (8)            /* 8ns per timestamp counter tick */
+#define SJA1105_PTP_CLK_RATE_SLIGHTLY_FASTER (0x800000d7UL) /* 1.0000001 (one tick (8ns) per 100ms faster) */
+#define SJA1105_PTP_CLK_RATE_DEFAULT         (0x80000000UL) /* 1.0000000 */
+#define SJA1105_PTP_CLK_RATE_SLIGHTLY_SLOWER (0x7fffff29UL) /* 0.9999999 (one tick (8ns) per 100ms slower) */
 
 
 #ifndef SJA1105_PORTS_START_ENABLED
@@ -473,10 +477,12 @@ sja1105_status_t SJA1105_FlushTCAM(sja1105_handle_t *dev);
 
 /* TSN */
 sja1105_status_t SJA1105_GetTimestampOffset(sja1105_handle_t *dev_a, sja1105_handle_t *dev_b, int64_t *offset);
+sja1105_status_t SJA1105_UpdateTimestamp(sja1105_handle_t *dev, uint64_t timestamp, bool add, bool sub);
 sja1105_status_t SJA1105_SyncTimestamps(sja1105_handle_t *dev_a, sja1105_handle_t *dev_b);
 sja1105_status_t SJA1105_GetCurrentTime(sja1105_handle_t *dev, uint64_t *timestamp);
 sja1105_status_t SJA1105_GetEgressTimestamp(sja1105_handle_t *dev, uint8_t port, uint8_t tsreg, uint64_t *timestamp);
 sja1105_status_t SJA1105_GetIngressTimestamp(sja1105_handle_t *dev, uint8_t *payload, uint8_t *switch_id, uint8_t *src_port, uint64_t *timestamp);
+sja1105_status_t SJA1105_SetPTPClockRate(sja1105_handle_t *dev, uint32_t rate);
 
 
 #ifdef __cplusplus

@@ -97,6 +97,7 @@ static sja1105_status_t SJA1105_GetCASMaster(sja1105_handle_t *dev_a, sja1105_ha
 }
 
 
+/* Note: This function requires two SJA1105 to have their PTP_TS pins physically connected */
 static sja1105_status_t _SJA1105_GetTimestampOffset(sja1105_handle_t *master, sja1105_handle_t *slave, int64_t *offset) {
 
     sja1105_status_t status = SJA1105_OK;
@@ -184,17 +185,60 @@ sja1105_status_t SJA1105_InitTSN(sja1105_handle_t *dev) {
 
     sja1105_status_t status = SJA1105_OK;
 
+    /* Check the device is initialised and take the mutex */
+    SJA1105_LOCK;
+
     /* Use the rate corrected PTP clock instead of the free running PTP timestamp clock */
     status = SJA1105_UsePTPCLK(dev);
-    if (status != SJA1105_OK) return status;
+    if (status != SJA1105_OK) goto end;
 
+end:
+
+    /* Give the mutex and return */
+    SJA1105_UNLOCK;
     return status;
 }
 
 
-/* This shouldn't be called while there is traffic or it may corrupt timestamps.
- * Note: This function requires two SJA1105 to have their PTP_TS pins physically
- *       connected. */
+/* This shouldn't be called while there is traffic or it may corrupt timestamps. */
+sja1105_status_t SJA1105_UpdateTimestamp(sja1105_handle_t *dev, uint64_t timestamp, bool add, bool sub) {
+
+    sja1105_status_t status = SJA1105_OK;
+    uint32_t         reg_data[2];
+
+    /* Trivial case */
+    if ((timestamp == 0) && (add || sub)) return status;
+
+#if SJA1105_PARAM_CHECKS_ENABLED
+    if (add && sub) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
+#endif
+
+    /* Check the device is initialised and take the mutex */
+    SJA1105_LOCK;
+
+    /* Put PTPCLKVAL writes into the requested mode */
+    status = SJA1105_WritePTPCtrlReg1(dev,
+                                      SJA1105_STATIC_CTRL_AREA_PTP_VALID |
+                                          (add ? SJA1105_STATIC_CTRL_AREA_PTP_CLKADD : 0) |
+                                          (sub ? SJA1105_STATIC_CTRL_AREA_PTP_CLKSUB : 0));
+    if (status != SJA1105_OK) goto end;
+
+    /* Set PTPCLKVAL */
+    reg_data[0] = (uint32_t) ((timestamp & 0x00000000ffffffffULL) >> 0);
+    reg_data[1] = (uint32_t) ((timestamp & 0xffffffff00000000ULL) >> 32);
+    status      = SJA1105_WriteRegister(dev, SJA1105_CTRL_AREA_PTP_REG_7, reg_data, sizeof(reg_data) / sizeof(reg_data[0]));
+    if (status != SJA1105_OK) goto end;
+
+end:
+
+    /* Give the mutex and return */
+    SJA1105_UNLOCK;
+    return status;
+}
+
+
+/* This shouldn't be called while there is traffic or it may corrupt timestamps. */
 sja1105_status_t SJA1105_SyncTimestamps(sja1105_handle_t *dev_a, sja1105_handle_t *dev_b) {
 
     sja1105_status_t status = SJA1105_OK;
@@ -213,10 +257,10 @@ sja1105_status_t SJA1105_SyncTimestamps(sja1105_handle_t *dev_a, sja1105_handle_
 
     sja1105_handle_t *master;
     sja1105_handle_t *slave;
-    uint32_t          reg_data[2];
     int64_t           offset;
     uint64_t          offset_abs;
     int64_t           offset_new;
+    bool              add;
 
     /* Find out which is the master and which is the slave */
     status = SJA1105_GetCASMaster(dev_a, dev_b, &master, &slave);
@@ -231,22 +275,17 @@ sja1105_status_t SJA1105_SyncTimestamps(sja1105_handle_t *dev_a, sja1105_handle_
     if (status != SJA1105_OK) goto end;
     offset_abs = ABS(offset);
 
-    /* Put slave's PTPCLKVAL writes into add/sub mode */
-    status = SJA1105_WritePTPCtrlReg1(slave, SJA1105_STATIC_CTRL_AREA_PTP_VALID | ((offset >= 0) ? SJA1105_STATIC_CTRL_AREA_PTP_CLKADD : SJA1105_STATIC_CTRL_AREA_PTP_CLKSUB));
-    if (status != SJA1105_OK) goto end;
-
-    /* Apply correction to slave */
-    reg_data[0] = (uint32_t) ((offset_abs & 0x00000000ffffffffULL) >> 0);
-    reg_data[1] = (uint32_t) ((offset_abs & 0xffffffff00000000ULL) >> 32);
-    status      = SJA1105_WriteRegister(slave, SJA1105_CTRL_AREA_PTP_REG_7, reg_data, 2);
+    /* Add the offset to the slave's timestamp */
+    add    = offset >= 0;
+    status = SJA1105_UpdateTimestamp(slave, offset_abs, add, !add);
     if (status != SJA1105_OK) goto end;
 
     /* Get the new offset and check the correction has been applied */
     status = _SJA1105_GetTimestampOffset(master, slave, &offset_new);
     if (status != SJA1105_OK) goto end;
 
-    /* Check the new offset under 1us */
-    if (ABS(offset_new) > 125) {
+    /* Check the new offset is under 1us */
+    if (ABS(offset_new) > (1000 / SJA1105_NS_PER_TS_TICK)) {
         status = SJA1105_CASC_SYNC_FAILED_ERROR;
         goto end;
     }
@@ -399,6 +438,23 @@ sja1105_status_t SJA1105_GetIngressTimestamp(sja1105_handle_t *dev, uint8_t *pay
     *timestamp = reconstructed_timestamp;
     if (switch_id != NULL) *switch_id = switch_id_internal;
     if (src_port != NULL) *src_port = src_port_internal;
+
+end:
+
+    SJA1105_UNLOCK;
+    return status;
+}
+
+
+sja1105_status_t SJA1105_SetPTPClockRate(sja1105_handle_t *dev, uint32_t rate) {
+
+    sja1105_status_t status = SJA1105_OK;
+
+    SJA1105_LOCK;
+
+    /* Write the new rate */
+    status = SJA1105_WriteRegister(dev, SJA1105_CTRL_AREA_PTP_REG_9, &rate, 1);
+    if (status != SJA1105_OK) goto end;
 
 end:
 
