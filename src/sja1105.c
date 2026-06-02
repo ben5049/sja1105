@@ -463,13 +463,15 @@ sja1105_status_t SJA1105_L2EntryReadByIndex(sja1105_handle_t *dev, uint16_t inde
 
     sja1105_status_t status = SJA1105_OK;
 
-    /* Check the device is initialised and take the mutex */
-    SJA1105_LOCK;
-
-    /* Argument checking */
+    /* Parameter checking */
+#if SJA1105_PARAM_CHECKS_ENABLED
     if (managment && (index >= SJA1105_NUM_MGMT_SLOTS)) status = SJA1105_PARAMETER_ERROR;
     if (!managment && (index >= SJA1105_L2ADDR_LU_NUM_ENTRIES)) status = SJA1105_PARAMETER_ERROR;
-    if (status != SJA1105_OK) goto end;
+    if (status != SJA1105_OK) return status;
+#endif
+
+    /* Check the device is initialised and take the mutex */
+    SJA1105_LOCK;
 
     /* Initialise variables */
     uint32_t reg_data[SJA1105_L2ADDR_LU_ENTRY_SIZE] = {0};
@@ -535,42 +537,39 @@ sja1105_status_t SJA1105_FlushTCAM(sja1105_handle_t *dev) {
 }
 
 
-sja1105_status_t SJA1105_MACAddrTrapTest(sja1105_handle_t *dev, const uint8_t *addr, bool *trapped, bool *send_meta, bool *incl_srcpt) {
+sja1105_status_t SJA1105_MACAddrTrapTest(sja1105_handle_t *dev, uint32_t addr_msw, uint32_t addr_lsw, bool *trapped, sja1105_mac_filters_t *filter) {
 
-    sja1105_status_t status = SJA1105_OK;
+    sja1105_status_t      status = SJA1105_OK;
+    sja1105_mac_filters_t filter_internal;
+
+    /* Parameter checking */
+#if SJA1105_PARAM_CHECKS_ENABLED
+    if (trapped == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
+#endif
 
     /* Check the device is initialised and take the mutex */
     SJA1105_LOCK;
 
-    /* Get the MAC filters */
-    sja1105_mac_filters_t filters;
-    status = SJA1105_GetMACFilters(dev, &filters);
+    *trapped = false;
 
-    /* Test against the first filter */
-    *trapped = true;
-    for (uint_fast8_t i = 0; i < MAC_ADDR_SIZE; i++) {
-        if ((addr[i] & filters.mac_flt0[i]) != filters.mac_fltres0[i]) {
-            *trapped = false;
+    for (uint_fast8_t i = 0; (i < SJA1105_NUM_MGMT_FILTERS) && !(*trapped); i++) {
+
+        /* Get the MAC filters */
+        status = SJA1105_GetMACFilters(dev, i, &filter_internal);
+        if (status != SJA1105_OK) goto end;
+
+        /* Test the MAC filters */
+        if (((addr_msw & filter_internal.mac_flt_msw) == filter_internal.mac_fltres_msw) &&
+            ((addr_lsw & filter_internal.mac_flt_lsw) == filter_internal.mac_fltres_lsw)) {
+            *trapped = true;
             break;
         }
     }
-    if (*trapped) {
-        *send_meta  = filters.send_meta0;
-        *incl_srcpt = filters.incl_srcpt0;
-        goto end;
-    }
 
-    /* Test against the second filter */
-    *trapped = true;
-    for (uint_fast8_t i = 0; i < MAC_ADDR_SIZE; i++) {
-        if ((addr[i] & filters.mac_flt1[i]) != filters.mac_fltres1[i]) {
-            *trapped = false;
-            break;
-        }
-    }
-    if (*trapped) {
-        *send_meta  = filters.send_meta1;
-        *incl_srcpt = filters.incl_srcpt1;
+    /* Copy out the filter */
+    if (*trapped && (filter != NULL)) {
+        *filter = filter_internal;
     }
 
 /* Give the mutex and return */

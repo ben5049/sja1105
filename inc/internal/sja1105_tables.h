@@ -71,7 +71,7 @@ sja1105_status_t SJA1105_AVBParamsTableCheck(sja1105_handle_t *dev, const sja110
 sja1105_status_t SJA1105_AVBParamsTablePatch(sja1105_handle_t *dev);
 
 sja1105_status_t SJA1105_GeneralParamsTableCheck(sja1105_handle_t *dev, const sja1105_table_t *table);
-sja1105_status_t SJA1105_GetMACFilters(sja1105_handle_t *dev, sja1105_mac_filters_t *mac_filters);
+sja1105_status_t SJA1105_GetMACFilters(sja1105_handle_t *dev, uint8_t slot, sja1105_mac_filters_t *mac_filters);
 
 sja1105_status_t SJA1105_AVBParamsTableGetCASMaster(const sja1105_table_t *table, bool *cas_master);
 

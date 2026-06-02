@@ -414,11 +414,6 @@ sja1105_status_t SJA1105_WriteStaticConfig(sja1105_handle_t *dev, bool safe) {
             table = &dev->tables.by_index[i];
             if (!table->in_use) continue;
 
-#if DEBUG
-            sja1105_block_id_t id = *table->id;
-            UNUSED(id);
-#endif
-
             status = SJA1105_WriteTable(dev, SJA1105_STATIC_CONF_ADDR + offset, table, true); /* Note this also accumulates the bytes written into the crc */
             if (status != SJA1105_OK) return status;
             offset += SJA1105_STATIC_CONF_BLOCK_OVERHEAD + *table->size;

@@ -544,33 +544,57 @@ sja1105_status_t SJA1105_GeneralParamsTableCheck(sja1105_handle_t *dev, const sj
  * MAC_FLTRES0:                        XXXXXX  |    |
  * MAC_FLTRES1:                                XXXXXX
  */
-sja1105_status_t SJA1105_GetMACFilters(sja1105_handle_t *dev, sja1105_mac_filters_t *mac_filters) {
+sja1105_status_t SJA1105_GetMACFilters(sja1105_handle_t *dev, uint8_t slot, sja1105_mac_filters_t *mac_filters) {
 
     sja1105_status_t status = SJA1105_OK;
 
-    /* Check the table is valid */
+    /* Check the parameters */
+#if SJA1105_PARAM_CHECKS_ENABLED
+    if (slot >= SJA1105_NUM_MGMT_FILTERS) status = SJA1105_PARAMETER_ERROR;
     if (!dev->tables.general_parameters.in_use) status = SJA1105_NOT_CONFIGURED_ERROR;
     if (status != SJA1105_OK) return status;
+#endif
 
     /* Calculate the pointer to the first MAC address as a uint8_t pointer */
     uint32_t *table     = dev->tables.general_parameters.data;
     uint8_t  *start_ptr = ((uint8_t *) (table + SJA1105_MAC_FLT_START_OFFSET_W)) + SJA1105_MAC_FLT_START_OFFSET_B;
+    uint8_t  *mac_ptr;
 
     /* Bounds checking */
     if ((start_ptr + (MAC_ADDR_SIZE * 4)) > (uint8_t *) (table + SJA1105_STATIC_CONF_GENERAL_PARAMS_SIZE)) status = SJA1105_PARAMETER_ERROR;
     if (status != SJA1105_OK) return status;
 
-    /* Copy MAC addresses */
-    memcpy(mac_filters->mac_flt0, start_ptr + (MAC_ADDR_SIZE * 0), MAC_ADDR_SIZE);
-    memcpy(mac_filters->mac_flt1, start_ptr + (MAC_ADDR_SIZE * 1), MAC_ADDR_SIZE);
-    memcpy(mac_filters->mac_fltres0, start_ptr + (MAC_ADDR_SIZE * 2), MAC_ADDR_SIZE);
-    memcpy(mac_filters->mac_fltres1, start_ptr + (MAC_ADDR_SIZE * 3), MAC_ADDR_SIZE);
+    /* Populate the struct based on the requested slot */
+    if (slot == 0) {
 
-    /* Get the other trapping information */
-    mac_filters->send_meta0  = (dev->tables.general_parameters.data[SJA1105_MAC_FLT_START_OFFSET_W] & SJA1105_SEND_META0) != 0;
-    mac_filters->send_meta1  = (dev->tables.general_parameters.data[SJA1105_MAC_FLT_START_OFFSET_W] & SJA1105_SEND_META1) != 0;
-    mac_filters->incl_srcpt0 = (dev->tables.general_parameters.data[SJA1105_MAC_FLT_START_OFFSET_W] & SJA1105_INCL_SRCPT0) != 0;
-    mac_filters->incl_srcpt1 = (dev->tables.general_parameters.data[SJA1105_MAC_FLT_START_OFFSET_W] & SJA1105_INCL_SRCPT1) != 0;
+        /* Extract MAC addresses for slot 0 */
+        mac_ptr                  = start_ptr + (MAC_ADDR_SIZE * 0);
+        mac_filters->mac_flt_msw = MAC_ADDR_MSW(mac_ptr[5], mac_ptr[4]);
+        mac_filters->mac_flt_lsw = MAC_ADDR_LSW(mac_ptr[3], mac_ptr[2], mac_ptr[1], mac_ptr[0]);
+
+        mac_ptr                     = start_ptr + (MAC_ADDR_SIZE * 2);
+        mac_filters->mac_fltres_msw = MAC_ADDR_MSW(mac_ptr[5], mac_ptr[4]);
+        mac_filters->mac_fltres_lsw = MAC_ADDR_LSW(mac_ptr[3], mac_ptr[2], mac_ptr[1], mac_ptr[0]);
+
+        /* Get the other trapping information for slot 0 */
+        mac_filters->send_meta  = (dev->tables.general_parameters.data[SJA1105_MAC_FLT_START_OFFSET_W] & SJA1105_SEND_META0) != 0;
+        mac_filters->incl_srcpt = (dev->tables.general_parameters.data[SJA1105_MAC_FLT_START_OFFSET_W] & SJA1105_INCL_SRCPT0) != 0;
+
+    } else {
+
+        /* Extract MAC addresses for slot 1 */
+        mac_ptr                  = start_ptr + (MAC_ADDR_SIZE * 1);
+        mac_filters->mac_flt_msw = MAC_ADDR_MSW(mac_ptr[5], mac_ptr[4]);
+        mac_filters->mac_flt_lsw = MAC_ADDR_LSW(mac_ptr[3], mac_ptr[2], mac_ptr[1], mac_ptr[0]);
+
+        mac_ptr                     = start_ptr + (MAC_ADDR_SIZE * 3);
+        mac_filters->mac_fltres_msw = MAC_ADDR_MSW(mac_ptr[5], mac_ptr[4]);
+        mac_filters->mac_fltres_lsw = MAC_ADDR_LSW(mac_ptr[3], mac_ptr[2], mac_ptr[1], mac_ptr[0]);
+
+        /* Get the other trapping information for slot 1 */
+        mac_filters->send_meta  = (dev->tables.general_parameters.data[SJA1105_MAC_FLT_START_OFFSET_W] & SJA1105_SEND_META1) != 0;
+        mac_filters->incl_srcpt = (dev->tables.general_parameters.data[SJA1105_MAC_FLT_START_OFFSET_W] & SJA1105_INCL_SRCPT1) != 0;
+    }
 
     return status;
 }

@@ -28,9 +28,17 @@ extern "C" {
 #define U32_BYTE_2(reg)           ((uint8_t) (((uint32_t) (reg) >> (2 * 8)) & 0xff))
 #define U32_BYTE_3(reg)           ((uint8_t) (((uint32_t) (reg) >> (3 * 8)) & 0xff))
 
-#define SJA1105_GET_TIME_MS()     dev->callbacks->callback_get_time_ms(dev->callback_context)
-#define SJA1105_DELAY_NS(ns)      dev->callbacks->callback_delay_ns((ns), dev->callback_context)
-#define SJA1105_DELAY_MS(ms)      dev->callbacks->callback_delay_ms((ms), dev->callback_context)
+#define MAC_ADDR_MSW(o1, o2)      (((uint32_t) (o1) << 8) | \
+                              ((uint32_t) (o2)))
+
+#define MAC_ADDR_LSW(o3, o4, o5, o6) (((uint32_t) (o3) << 24) | \
+                                      ((uint32_t) (o4) << 16) | \
+                                      ((uint32_t) (o5) << 8) |  \
+                                      ((uint32_t) (o6)))
+
+#define SJA1105_GET_TIME_MS() dev->callbacks->callback_get_time_ms(dev->callback_context)
+#define SJA1105_DELAY_NS(ns)  dev->callbacks->callback_delay_ns((ns), dev->callback_context)
+#define SJA1105_DELAY_MS(ms)  dev->callbacks->callback_delay_ms((ms), dev->callback_context)
 
 #define SJA1105_LOCK                                                                               \
     do {                                                                                           \
