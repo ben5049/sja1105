@@ -17,6 +17,37 @@
 #include "internal/sja1105_tables.h"
 
 
+static sja1105_status_t SJA1105_WriteL2ManagementEntry(sja1105_handle_t *dev, const uint32_t *lut_entry, uint8_t lut_entry_size) {
+
+    sja1105_status_t status = SJA1105_OK;
+    uint32_t         reg_data;
+
+    /* Wait for VALID to be 0. */
+    status = SJA1105_PollFlag(dev, SJA1105_DYN_CONF_L2_LUT_REG_0, SJA1105_DYN_CONF_L2_LUT_VALID, false);
+    if (status != SJA1105_OK) return status;
+
+    /* Write the entry */
+    status = SJA1105_WriteRegister(dev, SJA1105_DYN_CONF_L2_LUT_REG_1, lut_entry, lut_entry_size);
+    if (status != SJA1105_OK) return status;
+
+    /* Apply the entry */
+    reg_data  = SJA1105_DYN_CONF_L2_LUT_VALID;
+    reg_data |= SJA1105_DYN_CONF_L2_LUT_RDRWSET;
+    reg_data |= SJA1105_DYN_CONF_L2_LUT_MGMTROUTE;
+    reg_data |= ((uint32_t) SJA1105_L2_LUT_HOSTCMD_WRITE << SJA1105_L2_LUT_HOSTCMD_SHIFT) & SJA1105_L2_LUT_HOSTCMD_MASK;
+    status    = SJA1105_WriteRegister(dev, SJA1105_DYN_CONF_L2_LUT_REG_0, &reg_data, 1);
+    if (status != SJA1105_OK) return status;
+
+    /* TODO: Possibly check ERRORS. It should only be set if VALID was 1 when the write started, which this function made sure it wasn't. */
+
+    /* Wait for VALID to be 0. */
+    status = SJA1105_PollFlag(dev, SJA1105_DYN_CONF_L2_LUT_REG_0, SJA1105_DYN_CONF_L2_LUT_VALID, false);
+    if (status != SJA1105_OK) return status;
+
+    return status;
+}
+
+
 /* Create a management route in a single switch */
 sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint8_t dst_addr[MAC_ADDR_SIZE], uint8_t dst_ports, bool takets, uint8_t tsreg, sja1105_mgmt_route_free_callback_t free_callback, void *callback_context) {
 
@@ -31,9 +62,8 @@ sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint
 
     /* Create variables */
     uint32_t lut_entry[SJA1105_L2ADDR_LU_ENTRY_SIZE] = {0, 0, 0, 0, 0};
-    uint32_t reg_data;
-    uint8_t  free_entry   = SJA1105_NUM_MGMT_SLOTS;
-    uint32_t current_time = SJA1105_GET_TIME_MS();
+    uint8_t  free_entry                              = SJA1105_NUM_MGMT_SLOTS;
+    uint32_t current_time                            = SJA1105_GET_TIME_MS();
 
     /* Look for a free slot */
     for (uint_fast8_t i = 0; i < SJA1105_NUM_MGMT_SLOTS; i++) {
@@ -111,26 +141,8 @@ sja1105_status_t SJA1105_ManagementRouteCreate(sja1105_handle_t *dev, const uint
     lut_entry[1] |= ((uint32_t) dst_addr[5]) << 30; /* bits [63:62] */
     lut_entry[2] |= ((uint32_t) dst_addr[5]) >> 2;  /* bits [69:64] */
 
-    /* Wait for VALID to be 0. */
-    status = SJA1105_PollFlag(dev, SJA1105_DYN_CONF_L2_LUT_REG_0, SJA1105_DYN_CONF_L2_LUT_VALID, false);
-    if (status != SJA1105_OK) goto end;
-
     /* Write the entry */
-    status = SJA1105_WriteRegister(dev, SJA1105_DYN_CONF_L2_LUT_REG_1, lut_entry, SJA1105_L2ADDR_LU_ENTRY_SIZE);
-    if (status != SJA1105_OK) goto end;
-
-    /* Apply the entry */
-    reg_data  = SJA1105_DYN_CONF_L2_LUT_VALID;
-    reg_data |= SJA1105_DYN_CONF_L2_LUT_RDRWSET;
-    reg_data |= SJA1105_DYN_CONF_L2_LUT_MGMTROUTE;
-    reg_data |= ((uint32_t) SJA1105_L2_LUT_HOSTCMD_WRITE << SJA1105_L2_LUT_HOSTCMD_SHIFT) & SJA1105_L2_LUT_HOSTCMD_MASK;
-    status    = SJA1105_WriteRegister(dev, SJA1105_DYN_CONF_L2_LUT_REG_0, &reg_data, 1);
-    if (status != SJA1105_OK) goto end;
-
-    /* TODO: Possibly check ERRORS. It should only be set if VALID was 1 when the write started, which this function made sure it wasn't. */
-
-    /* Wait for VALID to be 0. */
-    status = SJA1105_PollFlag(dev, SJA1105_DYN_CONF_L2_LUT_REG_0, SJA1105_DYN_CONF_L2_LUT_VALID, false);
+    status = SJA1105_WriteL2ManagementEntry(dev, lut_entry, SJA1105_L2ADDR_LU_ENTRY_SIZE);
     if (status != SJA1105_OK) goto end;
 
     /* Update the device struct */
@@ -266,6 +278,12 @@ sja1105_status_t SJA1105_ManagementRouteFree(sja1105_handle_t *dev, bool force) 
             else if (force) {
                 dev->management_routes.slot_taken[i] = false;
                 dev->events.mgmt_entries_dropped++;
+
+                /* Invalidate the entry (only need to write the first word) */
+                entry[SJA1105_MGMT_INDEX_OFFSET]  = ((uint32_t) i << SJA1105_MGMT_INDEX_SHIFT) & SJA1105_MGMT_INDEX_MASK;
+                entry[SJA1105_MGMT_INDEX_OFFSET] &= ~SJA1105_MGMT_MGMTVALID_MASK; /* Invalid */
+                status                            = SJA1105_WriteL2ManagementEntry(dev, entry, SJA1105_MGMT_INDEX_OFFSET + 1);
+                if (status != SJA1105_OK) goto end;
 
                 /* Call the user callback */
                 if (dev->management_routes.callbacks[i] != NULL) {
