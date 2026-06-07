@@ -42,14 +42,28 @@ extern "C" {
 #define SJA1105_PREAMBLE              (8)  /* Preamble length in bytes */
 
 /* Timings */
-#define SJA1105_T_RST                        (5000)         /* Reset pin pulse width 5000ns (5us) */
-#define SJA1105_T_RST_STARTUP_HW             (329000)       /* 329000ns (329us) */
-#define SJA1105_T_RST_STARTUP_SW             (2000)         /* 2000ns (2us) */
-#define SJA1105_T_SPI_WR                     (130)          /* ns */
-#define SJA1105_T_SPI_CTRL_DATA              (64)           /* Time between writing the command frame and reading data in ns */
-#define SJA1105_T_SPI_LEAD                   (40)           /* ns */
-#define SJA1105_T_SPI_LAG                    (40)           /* ns */
-#define SJA1105_T_TDL_CHANGE                 (2000)         /* 2000ns (2us) */
+#define SJA1105_SPI_FMAX          (25000000)                                /* SPI Max frequency 25MHz */
+#define SJA1105_T_DWORD           ((32 * 1000000000ULL) / SJA1105_SPI_FMAX) /* Time to write one 32-bit double word at SJA1105_SPI_FMAX */
+#define SJA1105_T_RST             (5000)                                    /* Reset pin pulse width 5000ns (5us) */
+#define SJA1105_T_RST_STARTUP_HW  (329000)                                  /* 329000ns (329us) */
+#define SJA1105_T_RST_STARTUP_SW  (2000)                                    /* 2000ns (2us) */
+#define SJA1105_T_SPI_WR          (130)                                     /* ns */
+#define SJA1105_T_SPI_CTRL_DATA   (64)                                      /* Time between writing the command frame and reading data in ns */
+#define SJA1105_T_SPI_LEAD        (40)                                      /* ns */
+#define SJA1105_T_SPI_LAG         (40)                                      /* ns */
+#define SJA1105_T_TDL_CHANGE      (2000)                                    /* 2000ns (2us) */
+
+#define SJA1105_READ_TIME(dwords) (SJA1105_T_SPI_WR +           \
+                                   SJA1105_T_SPI_LEAD +         \
+                                   SJA1105_T_DWORD +            \
+                                   SJA1105_T_SPI_CTRL_DATA +    \
+                                   SJA1105_T_DWORD * (dwords) + \
+                                   SJA1105_T_SPI_LAG)
+
+#define SJA1105_WRITE_TIME(dwords) (SJA1105_T_SPI_WR +               \
+                                    SJA1105_T_SPI_LEAD +             \
+                                    SJA1105_T_DWORD * (1 + dwords) + \
+                                    SJA1105_T_SPI_LAG)
 
 #define SJA1105_NS_PER_TS_TICK               (8)            /* 8ns per timestamp counter tick */
 #define SJA1105_PTP_CLK_RATE_SLIGHTLY_FASTER (0x800000d7UL) /* 1.0000001 (one tick (8ns) per 100ms faster) */
