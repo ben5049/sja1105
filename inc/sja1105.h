@@ -66,10 +66,13 @@ extern "C" {
                                     SJA1105_T_SPI_LAG)
 
 #define SJA1105_NS_PER_TS_TICK               (8)            /* 8ns per timestamp counter tick */
+#define SJA1105_PTP_CLK_RATE_MUCH_FASTER     (0x8147ae14UL) /* 1.0100000 */
 #define SJA1105_PTP_CLK_RATE_SLIGHTLY_FASTER (0x800000d7UL) /* 1.0000001 (one tick (8ns) per 100ms faster) */
 #define SJA1105_PTP_CLK_RATE_DEFAULT         (0x80000000UL) /* 1.0000000 */
 #define SJA1105_PTP_CLK_RATE_SLIGHTLY_SLOWER (0x7fffff29UL) /* 0.9999999 (one tick (8ns) per 100ms slower) */
-
+#define SJA1105_PTP_CLK_RATE_MUCH_SLOWER     (0x7eb851ecUL) /* 0.9900000 */
+#define SJA1105_PTP_I32_TO_RATE(i32)         ((uint32_t) (i32) + SJA1105_PTP_CLK_RATE_DEFAULT)
+#define SJA1105_PTP_RATE_TO_I32(rate)        ((int32_t) ((rate) - SJA1105_PTP_CLK_RATE_DEFAULT))
 
 #ifndef SJA1105_PORTS_START_ENABLED
 #define SJA1105_PORTS_START_ENABLED true /* Override to "false" to disable port ingress, egress and learning at startup */
