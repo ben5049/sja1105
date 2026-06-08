@@ -461,3 +461,30 @@ end:
     SJA1105_UNLOCK;
     return status;
 }
+
+
+/* Start toggling the PTP_CLK pin at a rate of 1 pulse per second */
+sja1105_status_t SJA1105_StartPPS(sja1105_handle_t *dev) {
+
+    sja1105_status_t status = SJA1105_OK;
+
+    SJA1105_LOCK;
+
+    /* Set the start time and rate */
+    uint32_t reg_data[(SJA1105_CTRL_AREA_PTP_REG_6 - SJA1105_CTRL_AREA_PTP_REG_4) + 1] = {
+        [0] = 0,                                          /* Start time = 0 (always running) */
+        [1] = 0,                                          /* Start time = 0 (always running) */
+        [2] = (1000000000 / SJA1105_NS_PER_TS_TICK) / 2}; /* Two edges per second = 1Hz square wave */
+    status = SJA1105_WriteRegister(dev, SJA1105_CTRL_AREA_PTP_REG_4, reg_data, sizeof(reg_data) / sizeof(reg_data[0]));
+    if (status != SJA1105_OK) goto end;
+
+    /* Start toggling */
+    dev->regs.ptp_ctrl_reg_1_set_mask |= SJA1105_STATIC_CTRL_AREA_PTP_STARTPTPCP;
+    status                             = SJA1105_WritePTPCtrlReg1(dev, SJA1105_STATIC_CTRL_AREA_PTP_VALID);
+    if (status != SJA1105_OK) goto end;
+
+end:
+
+    SJA1105_UNLOCK;
+    return status;
+}

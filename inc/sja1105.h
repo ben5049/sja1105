@@ -500,6 +500,7 @@ sja1105_status_t SJA1105_GetCurrentTime(sja1105_handle_t *dev, uint64_t *timesta
 sja1105_status_t SJA1105_GetEgressTimestamp(sja1105_handle_t *dev, uint8_t port, uint8_t tsreg, uint64_t *timestamp);
 sja1105_status_t SJA1105_GetIngressTimestamp(sja1105_handle_t *dev, uint8_t *payload, uint8_t *switch_id, uint8_t *src_port, uint64_t *timestamp);
 sja1105_status_t SJA1105_SetPTPClockRate(sja1105_handle_t *dev, uint32_t rate);
+sja1105_status_t SJA1105_StartPPS(sja1105_handle_t *dev);
 
 
 #ifdef __cplusplus
