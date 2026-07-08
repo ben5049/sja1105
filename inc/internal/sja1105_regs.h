@@ -118,10 +118,6 @@ enum SJA1105_DeviceID_Enum {
 #define SJA1105_PTP_EGR_TS_MASK_32                         (0x00ffffffUL)
 #define SJA1105_PTP_EGR_TS_MASK_64                         (0x00ffffffULL)
 
-#define SJA1105_PTP_ING_TS_BITS                            (32)
-#define SJA1105_PTP_ING_TS_MASK_32                         (0xffffffffUL)
-#define SJA1105_PTP_ING_TS_MASK_64                         (0xffffffffULL)
-
 #define SJA1105_MAC_LEVEL_STATS_SIZE                       (SJA1105_REG_MAC_LEVEL_STATS_PORT1 - SJA1105_REG_MAC_LEVEL_STATS_PORT0)
 #define SJA1105_MAC_LEVEL_STATS_COUNTERS_PORT_OFFSET(port) ((port) * SJA1105_MAC_LEVEL_STATS_SIZE)
 #define SJA1105_MAC_LEVEL_STATS_FLAGS_PORT_OFFSET(port)    (((port) * SJA1105_MAC_LEVEL_STATS_SIZE) + 1)
@@ -573,8 +569,8 @@ enum SJA1105_CtrlAreaReg_Enum {
     SJA1105_CTRL_AREA_PTP_REG_7          = 0x19, /* PTPCLKVALL */
     SJA1105_CTRL_AREA_PTP_REG_8          = 0x1a, /* PTPCLKVALU */
     SJA1105_CTRL_AREA_PTP_REG_9          = 0x1b, /* PTPCLKRATE */
-    SJA1105_CTRL_AREA_PTP_REG_10         = 0x1c,
-    SJA1105_CTRL_AREA_PTP_REG_11         = 0x1d,
+    SJA1105_CTRL_AREA_PTP_REG_10         = 0x1c, /* PTPTSCLKL */
+    SJA1105_CTRL_AREA_PTP_REG_11         = 0x1d, /* PTPTSCLKU */
     SJA1105_CTRL_AREA_PTP_REG_12         = 0x1e,
     SJA1105_CTRL_AREA_PTP_REG_13         = 0x1f, /* PTPSYNCTSL */
     SJA1105_CTRL_AREA_PTP_REG_14         = 0x20  /* PTPSYNCTSU */

@@ -279,6 +279,10 @@ typedef struct {
     /* Must store this reg since it is write only but must have certain bits (CORRCLK4TS) kept the same */
     uint32_t ptp_ctrl_reg_1_set_mask;
     uint32_t ptp_ctrl_reg_1_clear_mask;
+
+    /* Cached values of write only registers */
+    uint32_t ptp_ctrl_reg_1;
+    uint32_t ptp_clk_rate;
 } sja1105_regs_t;
 
 typedef struct {
@@ -497,6 +501,7 @@ sja1105_status_t SJA1105_GetTimestampOffset(sja1105_handle_t *dev_a, sja1105_han
 sja1105_status_t SJA1105_UpdateTimestamp(sja1105_handle_t *dev, uint64_t timestamp, bool add, bool sub);
 sja1105_status_t SJA1105_SyncTimestamps(sja1105_handle_t *dev_a, sja1105_handle_t *dev_b);
 sja1105_status_t SJA1105_GetCurrentTime(sja1105_handle_t *dev, uint64_t *timestamp);
+sja1105_status_t SJA1105_GetCurrentTimeRaw(sja1105_handle_t *dev, uint64_t *timestamp);
 sja1105_status_t SJA1105_GetEgressTimestamp(sja1105_handle_t *dev, uint8_t port, uint8_t tsreg, uint64_t *timestamp);
 sja1105_status_t SJA1105_GetIngressTimestamp(sja1105_handle_t *dev, uint8_t *payload, uint8_t *switch_id, uint8_t *src_port, uint64_t *timestamp);
 sja1105_status_t SJA1105_SetPTPClockRate(sja1105_handle_t *dev, uint32_t rate);

@@ -17,48 +17,45 @@
 
 static inline sja1105_status_t SJA1105_WritePTPCtrlReg1(sja1105_handle_t *dev, uint32_t data) {
 
+    sja1105_status_t status = SJA1105_OK;
+
     /* Apply masking */
+    assert((dev->regs.ptp_ctrl_reg_1_set_mask & dev->regs.ptp_ctrl_reg_1_clear_mask) == 0);
     data |= dev->regs.ptp_ctrl_reg_1_set_mask;
     data &= ~dev->regs.ptp_ctrl_reg_1_clear_mask;
 
     /* Write the reg */
-    return SJA1105_WriteRegister(dev, SJA1105_CTRL_AREA_PTP_REG_1, &data, 1);
+    status = SJA1105_WriteRegister(dev, SJA1105_CTRL_AREA_PTP_REG_1, &data, 1);
+    if (status == SJA1105_OK) dev->regs.ptp_ctrl_reg_1 = data;
+
+    return status;
+}
+
+
+static inline sja1105_status_t SJA1105_SetTimestampClockSource(sja1105_handle_t *dev, bool use_ptpclk) {
+
+    if (use_ptpclk) {
+        dev->regs.ptp_ctrl_reg_1_set_mask   |= SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS;
+        dev->regs.ptp_ctrl_reg_1_clear_mask &= ~SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS;
+    } else {
+        dev->regs.ptp_ctrl_reg_1_set_mask   &= ~SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS;
+        dev->regs.ptp_ctrl_reg_1_clear_mask |= SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS;
+    }
+
+    /* Unconditional commit */
+    return SJA1105_WritePTPCtrlReg1(dev, SJA1105_STATIC_CTRL_AREA_PTP_VALID);
 }
 
 
 /* DO NOT CHANGE WHILE THERE IS TRAFFIC */
 static inline sja1105_status_t SJA1105_UsePTPCLK(sja1105_handle_t *dev) {
-
-    sja1105_status_t status = SJA1105_OK;
-    bool             updated;
-
-    updated = (dev->regs.ptp_ctrl_reg_1_set_mask & SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS) != 0;
-
-    dev->regs.ptp_ctrl_reg_1_set_mask   |= SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS;
-    dev->regs.ptp_ctrl_reg_1_clear_mask &= ~SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS;
-
-    if (updated) {
-        status = SJA1105_WritePTPCtrlReg1(dev, SJA1105_STATIC_CTRL_AREA_PTP_VALID);
-    }
-    return status;
+    return SJA1105_SetTimestampClockSource(dev, true);
 }
 
 
 /* DO NOT CHANGE WHILE THERE IS TRAFFIC */
 static inline sja1105_status_t SJA1105_UsePTPTSCLK(sja1105_handle_t *dev) {
-
-    sja1105_status_t status = SJA1105_OK;
-    bool             updated;
-
-    updated = (dev->regs.ptp_ctrl_reg_1_clear_mask & SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS) != 0;
-
-    dev->regs.ptp_ctrl_reg_1_set_mask   &= ~SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS;
-    dev->regs.ptp_ctrl_reg_1_clear_mask |= SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS;
-
-    if (updated) {
-        status = SJA1105_WritePTPCtrlReg1(dev, SJA1105_STATIC_CTRL_AREA_PTP_VALID);
-    }
-    return status;
+    return SJA1105_SetTimestampClockSource(dev, false);
 }
 
 
@@ -304,7 +301,7 @@ release_a:
 }
 
 
-/* Read the rate correct timestamp register. Note the timestamp is in intervals of 8ns */
+/* Read the rate correct timestamp register (PTPCLK). Note the timestamp is in intervals of 8ns */
 sja1105_status_t SJA1105_GetCurrentTime(sja1105_handle_t *dev, uint64_t *timestamp) {
 
     sja1105_status_t status = SJA1105_OK;
@@ -320,6 +317,36 @@ sja1105_status_t SJA1105_GetCurrentTime(sja1105_handle_t *dev, uint64_t *timesta
 
     /* Read the timestamp register */
     status = SJA1105_ReadRegister(dev, SJA1105_CTRL_AREA_PTP_REG_7, reg_data, 2);
+    if (status != SJA1105_OK) goto end;
+
+    /* Store the timestamp */
+    *timestamp  = reg_data[0];
+    *timestamp |= (uint64_t) reg_data[1] << 32;
+
+end:
+
+    /* Give the mutex and return */
+    SJA1105_UNLOCK;
+    return status;
+}
+
+
+/* Read the non rate correct timestamp register (PTPTSCLK). Note the timestamp is in intervals of 8ns */
+sja1105_status_t SJA1105_GetCurrentTimeRaw(sja1105_handle_t *dev, uint64_t *timestamp) {
+
+    sja1105_status_t status = SJA1105_OK;
+    uint32_t         reg_data[2];
+
+#if SJA1105_PARAM_CHECKS_ENABLED
+    if (timestamp == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (status != SJA1105_OK) return status;
+#endif
+
+    /* Check the device is initialised and take the mutex */
+    SJA1105_LOCK;
+
+    /* Read the raw timestamp register */
+    status = SJA1105_ReadRegister(dev, SJA1105_CTRL_AREA_PTP_REG_10, reg_data, 2);
     if (status != SJA1105_OK) goto end;
 
     /* Store the timestamp */
@@ -426,13 +453,8 @@ sja1105_status_t SJA1105_GetIngressTimestamp(sja1105_handle_t *dev, uint8_t *pay
     status = SJA1105_GetCurrentTime(dev, &current_time);
     if (status != SJA1105_OK) goto end;
 
-    /* Reconstruct the ingress timestamp */
-    reconstructed_timestamp = (current_time & ~SJA1105_PTP_ING_TS_MASK_64) | (partial_timestamp & SJA1105_PTP_ING_TS_MASK_32);
-
-    /* Handle the wrap around */
-    if (reconstructed_timestamp > current_time) {
-        reconstructed_timestamp -= (1ULL << SJA1105_PTP_ING_TS_BITS);
-    }
+    /* Reconstruct the ingress timestamp, handling wrap around */
+    reconstructed_timestamp = current_time + (int32_t) (partial_timestamp - (uint32_t) current_time);
 
     /* Assign outputs */
     *timestamp = reconstructed_timestamp;
@@ -450,13 +472,14 @@ sja1105_status_t SJA1105_SetPTPClockRate(sja1105_handle_t *dev, uint32_t rate) {
 
     sja1105_status_t status = SJA1105_OK;
 
+    /* Must be using rate corrected PTP clock for this function to do anything */
+    assert(dev->regs.ptp_ctrl_reg_1 & SJA1105_STATIC_CTRL_AREA_PTP_CORRCLK4TS);
+
     SJA1105_LOCK;
 
     /* Write the new rate */
     status = SJA1105_WriteRegister(dev, SJA1105_CTRL_AREA_PTP_REG_9, &rate, 1);
-    if (status != SJA1105_OK) goto end;
-
-end:
+    if (status == SJA1105_OK) dev->regs.ptp_clk_rate = rate;
 
     SJA1105_UNLOCK;
     return status;
