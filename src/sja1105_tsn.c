@@ -102,12 +102,12 @@ static sja1105_status_t _SJA1105_GetTimestampOffset(sja1105_handle_t *master, sj
     uint64_t         master_timestamp;
     uint64_t         slave_timestamp;
 
-    /* Set sync line high */
-    status = SJA1105_WritePTPCtrlReg1(master, SJA1105_STATIC_CTRL_AREA_PTP_VALID | SJA1105_STATIC_CTRL_AREA_PTP_CASSYNC);
-    if (status != SJA1105_OK) return status;
-
     /* Set sync line low */
     status = SJA1105_WritePTPCtrlReg1(master, SJA1105_STATIC_CTRL_AREA_PTP_VALID);
+    if (status != SJA1105_OK) return status;
+
+    /* Set sync line high */
+    status = SJA1105_WritePTPCtrlReg1(master, SJA1105_STATIC_CTRL_AREA_PTP_VALID | SJA1105_STATIC_CTRL_AREA_PTP_CASSYNC);
     if (status != SJA1105_OK) return status;
 
     /* Get the master timestamp */
