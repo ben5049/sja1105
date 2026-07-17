@@ -65,6 +65,7 @@ sja1105_status_t SJA1105_MACConfTableSetEgress(sja1105_table_t *table, uint8_t p
 sja1105_status_t SJA1105_MACConfTableGetDynLearn(const sja1105_table_t *table, uint8_t port_num, bool *dyn_learn);
 sja1105_status_t SJA1105_MACConfTableSetDynLearn(sja1105_table_t *table, uint8_t port_num, bool dyn_learn);
 
+sja1105_status_t SJA1105_L2LookupParamsGetStartDynSpc(sja1105_handle_t *dev, uint16_t *dyn_spc);
 sja1105_status_t SJA1105_L2ForwardingTableRead(sja1105_handle_t *dev, uint8_t index);
 
 sja1105_status_t SJA1105_AVBParamsTableCheck(sja1105_handle_t *dev, const sja1105_table_t *table);

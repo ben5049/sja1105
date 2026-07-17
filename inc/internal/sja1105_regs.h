@@ -495,6 +495,10 @@ typedef enum {
 
 #define SJA1105_STATIC_CONF_GENERAL_PARAMS_SIZE                 (11)
 
+#define SJA1105_START_DYNSPC_OFFSET                             (1) /* [42:33] therefore in the 1st word */
+#define SJA1105_START_DYNSPC_SHIFT                              (1) /* shifted up by 1 */
+#define SJA1105_START_DYNSPC_MASK                               (0x3ff << SJA1105_START_DYNSPC_SHIFT)
+
 #define SJA1105_STATIC_CONF_L2_FORWARDING_ENTRY_SIZE            (2)
 #define SJA1105_STATIC_CONF_L2_FORWARDING_NUM_ENTRIES           (13)
 #define SJA1105_STATIC_CONF_L2_FORWARDING_SIZE                  (SJA1105_STATIC_CONF_L2_FORWARDING_ENTRY_SIZE * SJA1105_STATIC_CONF_L2_FORWARDING_NUM_ENTRIES)

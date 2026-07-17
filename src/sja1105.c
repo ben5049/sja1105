@@ -513,25 +513,30 @@ end:
 }
 
 
-/* Invalidates all entries in the TCAM (L2 lookup table, sometimes also called the MAC address
+/* Invalidate all entries in the TCAM (L2 lookup table, sometimes also called the MAC address
  * table, the address translation unit (ATU) or forwarding database (FDB)).
+ *
+ * This function can be sped up by raising START_DYNSPC
  */
 sja1105_status_t SJA1105_FlushTCAM(sja1105_handle_t *dev) {
 
     sja1105_status_t status = SJA1105_OK;
+    uint16_t         start_dynspc;
 
     /* Check the device is initialised and take the mutex */
     SJA1105_LOCK;
 
-    /* Re-writing the static config flushes the TCAM */
-    status = SJA1105_SyncStaticConfig(dev);
+    /* Get the index of the first dynamic entry */
+    status = SJA1105_L2LookupParamsGetStartDynSpc(dev, &start_dynspc);
+    if (status != SJA1105_OK) goto end;
 
-    /* TODO: only invalidate LUT entries if its faster than a reconfig */
-    /* Invalidate all entries TODO: Start at first dynamic entry? */
-    /* TODO: Upload static config again? */
-    // status = SJA1105_L2LUTInvalidateRange(dev, 0, SJA1105_L2ADDR_LU_NUM_ENTRIES - 1);
+    /* Invalidate all dynamically learned entries */
+    status = SJA1105_L2LUTInvalidateRange(dev, start_dynspc, SJA1105_L2ADDR_LU_NUM_ENTRIES - 1);
+    if (status != SJA1105_OK) goto end;
+
 
     /* Give the mutex and return */
+end:
     SJA1105_UNLOCK;
     return status;
 }
@@ -572,7 +577,7 @@ sja1105_status_t SJA1105_MACAddrTrapTest(sja1105_handle_t *dev, uint32_t addr_ms
         *filter = filter_internal;
     }
 
-/* Give the mutex and return */
+    /* Give the mutex and return */
 end:
     SJA1105_UNLOCK;
     return status;

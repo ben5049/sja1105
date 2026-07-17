@@ -29,18 +29,19 @@ extern "C" {
 
 
 /* General */
-#define SJA1105_NUM_PORTS             (5)
-#define SJA1105_NUM_TABLES            (25)
-#define SJA1105_FIXED_BUFFER_SIZE     (274) /* Size of the fixed length table buffer */
-#define SJA1105_NUM_MGMT_SLOTS        (4)   /* For transmitting */
-#define SJA1105_NUM_MGMT_FILTERS      (2)   /* For receiving (trapping) */
-#define SJA1105_MAX_ATTEMPTS          (10)  /* Maximum number of attempts to try anything. E.g. polling a flag with timeout = 100ms will result in 10 reads 10ms apart. Must be > 0 */
-#define SJA1105_L2ADDR_LU_ENTRY_SIZE  (5)
-#define SJA1105_L2ADDR_LU_NUM_ENTRIES (1024)
-#define SJA1105_NO_TIMESTAMP          (0ULL)
-#define SJA1105_FCS                   (4)  /* Frame check sequence in bytes */
-#define SJA1105_IFG                   (12) /* Inter frame gap in bytes */
-#define SJA1105_PREAMBLE              (8)  /* Preamble length in bytes */
+#define SJA1105_NUM_PORTS                 (5)
+#define SJA1105_NUM_TABLES                (25)
+#define SJA1105_FIXED_BUFFER_SIZE         (274)                                  /* Size of the fixed length table buffer */
+#define SJA1105_NUM_MGMT_SLOTS            (4)                                    /* For transmitting */
+#define SJA1105_NUM_MGMT_FILTERS          (2)                                    /* For receiving (trapping) */
+#define SJA1105_MAX_ATTEMPTS              (10)                                   /* Maximum number of attempts to try anything. E.g. polling a flag with timeout = 100ms will result in 10 reads 10ms apart. Must be > 0 */
+#define SJA1105_L2ADDR_LU_ENTRY_SIZE      (5)
+#define SJA1105_L2ADDR_LU_ENTRY_WRITE_CMD (1 + SJA1105_L2ADDR_LU_ENTRY_SIZE + 1) /* Address + entry + write command */
+#define SJA1105_L2ADDR_LU_NUM_ENTRIES     (1024)
+#define SJA1105_NO_TIMESTAMP              (0ULL)
+#define SJA1105_FCS                       (4)  /* Frame check sequence in bytes */
+#define SJA1105_IFG                       (12) /* Inter frame gap in bytes */
+#define SJA1105_PREAMBLE                  (8)  /* Preamble length in bytes */
 
 /* Timings */
 #define SJA1105_SPI_FMAX          (25000000)                                /* SPI Max frequency 25MHz */

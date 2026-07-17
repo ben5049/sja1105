@@ -103,7 +103,7 @@ sja1105_status_t SJA1105_ReadRegisterWithCheck(sja1105_handle_t *dev, uint32_t a
  * If polarity is high then it will poll until the flag is 1
  * If polarity is low then it will poll until the flag is 0
  */
-sja1105_status_t SJA1105_PollFlag(sja1105_handle_t *dev, uint32_t addr, uint32_t mask, bool polarity) {
+static sja1105_status_t _SJA1105_PollFlag(sja1105_handle_t *dev, uint32_t addr, uint32_t mask, bool polarity, bool critical) {
 
     sja1105_status_t status = SJA1105_OK;
     bool             flag   = false;
@@ -112,7 +112,7 @@ sja1105_status_t SJA1105_PollFlag(sja1105_handle_t *dev, uint32_t addr, uint32_t
     for (uint_fast8_t i = 0; i < SJA1105_MAX_ATTEMPTS; i++) {
         status = SJA1105_ReadFlag(dev, addr, mask, &flag);
         if (status != SJA1105_OK || flag == polarity) break;
-        SJA1105_DELAY_MS(dev->config->timeout / SJA1105_MAX_ATTEMPTS);
+        if (!critical) SJA1105_DELAY_MS(dev->config->timeout / SJA1105_MAX_ATTEMPTS);
     }
 
     /* If the loop reaches the end and the flag hasn't been set */
@@ -121,6 +121,11 @@ sja1105_status_t SJA1105_PollFlag(sja1105_handle_t *dev, uint32_t addr, uint32_t
     }
 
     return status;
+}
+
+
+sja1105_status_t SJA1105_PollFlag(sja1105_handle_t *dev, uint32_t addr, uint32_t mask, bool polarity) {
+    return _SJA1105_PollFlag(dev, addr, mask, polarity, false);
 }
 
 
@@ -307,28 +312,28 @@ sja1105_status_t SJA1105_L2LUTInvalidateRange(sja1105_handle_t *dev, uint16_t lo
 #endif
 
     /* Initialise the empty register data array: 1 command word + 5 entry words + 1 write entry command */
-    static const uint8_t size                                           = 1 + SJA1105_L2ADDR_LU_ENTRY_SIZE + 1;
-    uint32_t             reg_data[1 + SJA1105_L2ADDR_LU_ENTRY_SIZE + 1] = {0};
+    uint32_t reg_data[SJA1105_L2ADDR_LU_ENTRY_WRITE_CMD] = {0};
 
     /* Setup the command word for a write to L2 Address Lookup table reconfiguration register 1 */
     reg_data[0]  = SJA1105_SPI_WRITE_FRAME;
     reg_data[0] |= ((uint32_t) (SJA1105_DYN_CONF_L2_LUT_REG_1 & SJA1105_SPI_ADDR_MASK)) << SJA1105_SPI_ADDR_POSITION;
 
     /* Setup the L2 Address Lookup table reconfiguration register 0 with the invalidate command */
-    reg_data[size - 1]  = SJA1105_DYN_CONF_L2_LUT_VALID;
-    reg_data[size - 1] |= SJA1105_DYN_CONF_L2_LUT_RDRWSET;
-    reg_data[size - 1] |= ((uint32_t) SJA1105_L2_LUT_HOSTCMD_INVALIDATE_ENTRY << SJA1105_L2_LUT_HOSTCMD_SHIFT) & SJA1105_L2_LUT_HOSTCMD_MASK;
+    reg_data[SJA1105_L2ADDR_LU_ENTRY_WRITE_CMD - 1]  = SJA1105_DYN_CONF_L2_LUT_VALID;
+    reg_data[SJA1105_L2ADDR_LU_ENTRY_WRITE_CMD - 1] |= SJA1105_DYN_CONF_L2_LUT_RDRWSET;
+    reg_data[SJA1105_L2ADDR_LU_ENTRY_WRITE_CMD - 1] |= ((uint32_t) SJA1105_L2_LUT_HOSTCMD_INVALIDATE_ENTRY << SJA1105_L2_LUT_HOSTCMD_SHIFT) & SJA1105_L2_LUT_HOSTCMD_MASK;
 
     SJA1105_ENTER_CRITICAL;
 
     /* Iterate through all entries to be invalidated */
+    uint16_t invalidated = 0;
     for (uint_fast16_t i = low_i; i <= high_i; i++) {
 
         /* Set the entry index */
-        reg_data[1 + SJA1105_L2_LUT_INDEX_OFFSET] = ((uint32_t) i << SJA1105_L2_LUT_INDEX_SHIFT) && SJA1105_L2_LUT_INDEX_MASK;
+        reg_data[1 + SJA1105_L2_LUT_INDEX_OFFSET] = ((uint32_t) i << SJA1105_L2_LUT_INDEX_SHIFT) & SJA1105_L2_LUT_INDEX_MASK;
 
         /* Wait for VALID to be 0. */
-        status = SJA1105_PollFlag(dev, SJA1105_DYN_CONF_L2_LUT_REG_0, SJA1105_DYN_CONF_L2_LUT_VALID, false);
+        status = _SJA1105_PollFlag(dev, SJA1105_DYN_CONF_L2_LUT_REG_0, SJA1105_DYN_CONF_L2_LUT_VALID, false, true);
         if (status != SJA1105_OK) goto end;
 
         /* Start the transaction after a delay (ensures successive transactions meet timing requirements) */
@@ -337,12 +342,19 @@ sja1105_status_t SJA1105_L2LUTInvalidateRange(sja1105_handle_t *dev, uint16_t lo
         SJA1105_DELAY_NS(SJA1105_T_SPI_LEAD);
 
         /* Write the invalidate command */
-        status = SJA1105_SPI_TRANSMIT(reg_data, size);
+        status = SJA1105_SPI_TRANSMIT(reg_data, SJA1105_L2ADDR_LU_ENTRY_WRITE_CMD);
         if (status != SJA1105_OK) goto end;
 
         /* End the transaction */
         SJA1105_DELAY_NS(SJA1105_T_SPI_LAG);
         SJA1105_WRITE_CS_PIN(SJA1105_PIN_SET);
+        invalidated++;
+
+        /* Allow interrupts to be processed between every 32 entries */
+        if ((invalidated % 32) == 1) {
+            SJA1105_EXIT_CRITICAL;
+            SJA1105_ENTER_CRITICAL;
+        }
     }
 
 end:

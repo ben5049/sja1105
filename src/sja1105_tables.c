@@ -671,6 +671,23 @@ sja1105_status_t SJA1105_xMIIModeTableCheck(sja1105_handle_t *dev, const sja1105
 }
 
 
+sja1105_status_t SJA1105_L2LookupParamsGetStartDynSpc(sja1105_handle_t *dev, uint16_t *start_dynspc) {
+
+    sja1105_status_t status = SJA1105_OK;
+
+    /* Check the parameters */
+#if SJA1105_PARAM_CHECKS_ENABLED
+    if (start_dynspc == NULL) status = SJA1105_PARAMETER_ERROR;
+    if (!dev->tables.l2_lookup_parameters.in_use) status = SJA1105_NOT_CONFIGURED_ERROR;
+    if (status != SJA1105_OK) return status;
+#endif
+
+    *start_dynspc = (dev->tables.l2_lookup_parameters.data[SJA1105_START_DYNSPC_OFFSET] & SJA1105_START_DYNSPC_MASK) >> SJA1105_START_DYNSPC_SHIFT;
+
+    return status;
+}
+
+
 sja1105_status_t SJA1105_L2ForwardingTableRead(sja1105_handle_t *dev, uint8_t index) {
 
     sja1105_status_t status   = SJA1105_OK;
